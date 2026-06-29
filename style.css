@@ -1,23 +1,24 @@
+@charset "UTF-8";
+
 body {
     margin: 0;
     padding: 0;
-    background-color: #0055b3; /* 海の青 */
-    font-family: 'Helvetica Neue', Arial, sans-serif;
+    background-color: #1a1a1a;
+    font-family: "Hiragino Kaku Gothic ProN", "Helvetica Neue", Arial, sans-serif;
     display: flex;
     justify-content: center;
     align-items: center;
     min-height: 100vh;
 }
 
-/* 地図とパネルを包むコンテナ */
+/* マップコンテナ（1024x768ベース） */
 .weather-map-container {
     position: relative;
     width: 100%;
-    max-width: 800px;
+    max-width: 1024px;
     aspect-ratio: 4 / 3;
-    background-color: #0066cc;
     overflow: hidden;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
 }
 
 .base-map {
@@ -26,44 +27,87 @@ body {
     display: block;
 }
 
-/* 天気パネルの共通スタイル */
+/* タイトルスタイル */
+.map-title {
+    position: absolute;
+    top: 25px;
+    left: 25px;
+    color: white;
+    font-size: 3rem;
+    font-weight: 900;
+    text-shadow: 3px 3px 0 #333, -3px -3px 0 #333, 3px -3px 0 #333, -3px 3px 0 #333;
+    letter-spacing: 2px;
+    z-index: 10;
+}
+
+/* お天気パネルのデザイン（完全再現） */
 .weather-panel {
     position: absolute;
     background: white;
-    border-radius: 4px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-    width: 160px;
-    overflow: hidden;
-    animation: fadeIn 0.5s ease-out;
+    box-shadow: 5px 5px 15px rgba(0,0,0,0.4);
+    width: 220px;
+    border: 1px solid #ccc;
+    z-index: 5;
 }
 
 .area-name {
     background-color: #ffffff;
-    color: #333333;
-    font-weight: bold;
+    color: #222222;
+    font-weight: 900;
     text-align: center;
-    padding: 4px 0;
-    font-size: 1.1rem;
-    border-bottom: 1px solid #ddd;
+    padding: 6px 0;
+    font-size: 1.8rem;
 }
 
 .weather-info {
     display: flex;
-    height: 60px;
+    height: 90px;
+    border-top: 2px solid #333;
 }
 
-.weather-icon-box {
-    flex: 1;
-    background: linear-gradient(135deg, #ff9900 0%, #ff5500 50%, #999999 50%, #cccccc 100%);
-    color: white;
-    font-size: 1.8rem;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+/* 天気アイコン（左側スプリット背景） */
+.weather-status-wrap {
+    flex: 1.1;
+    position: relative;
+    background: linear-gradient(115deg, #ff7a00 50%, #8c8c8c 50%);
+    overflow: hidden;
 }
 
+/* CSSで作る太陽と雲 */
+.weather-icon.sun {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    width: 40px;
+    height: 40px;
+    background: #ffffff;
+    border-radius: 50%;
+    box-shadow: 0 0 15px #fff;
+}
+
+.weather-icon.cloud-overlap {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    width: 45px;
+    height: 25px;
+    background: #ffffff;
+    border-radius: 20px;
+}
+.weather-icon.cloud-overlap::before {
+    content: '';
+    position: absolute;
+    top: -15px;
+    left: 10px;
+    width: 25px;
+    height: 25px;
+    background: #ffffff;
+    border-radius: 50%;
+}
+
+/* 気温ボックス（右側） */
 .temp-box {
-    flex: 1;
+    flex: 0.9;
     display: flex;
     flex-direction: column;
 }
@@ -71,22 +115,47 @@ body {
 .temp-high, .temp-low {
     flex: 1;
     display: flex;
-    justify-content: center;
+    justify-content: flex-end;
     align-items: center;
+    padding-right: 15px;
     color: white;
-    font-weight: bold;
+    font-weight: 900;
+    font-size: 2rem;
+    border-left: 2px solid #333;
+}
+
+.temp-high {
+    background-color: #ff2626;
+    border-bottom: 2px solid #333;
+}
+.temp-low {
+    background-color: #1a42ff;
+}
+
+.unit {
     font-size: 1.1rem;
+    margin-left: 2px;
+    font-weight: bold;
 }
 
-.temp-high { background-color: #ff3333; }
-.temp-low  { background-color: #3333ff; }
+/* 各都市の正確な配置マッピング */
+.niihama     { top: 10%; right: 10%; }
+.matsuyama   { top: 20%; left: 20%; }
+.ishizuchi   { top: 40%; left: 48%; }
+.yawatahama  { top: 48%; left: 6%; }
+.uwajima     { top: 70%; left: 10%; }
 
-/* 各パネルの位置指定（パーセンテージでレスポンシブ対応） */
-.matsuyama { top: 25%; left: 35%; }
-.niihama   { top: 15%; left: 65%; }
-.uwajima   { top: 65%; left: 20%; }
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-10px); }
-    to { opacity: 1; transform: translateY(0); }
+/* 右下のロゴ */
+.wn-logo {
+    position: absolute;
+    bottom: 15px;
+    right: 15px;
+    color: white;
+    font-size: 1rem;
+    font-weight: bold;
+    font-style: italic;
+    background: rgba(0,0,0,0.5);
+    padding: 3px 8px;
+    border-radius: 3px;
 }
+.wn-blue { color: #0088ff; font-weight: 900; }
