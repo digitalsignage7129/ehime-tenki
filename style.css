@@ -6,33 +6,9 @@ body {
     background: radial-gradient(circle, #2980b9, #2c3e50);
     font-family: "Hiragino Kaku Gothic ProN", Arial, sans-serif;
     display: flex;
-    flex-direction: column;
+    justify-content: center;
     align-items: center;
     min-height: 100vh;
-}
-
-/* タブボタン */
-.tab-container {
-    margin-bottom: 15px;
-    display: flex;
-    gap: 10px;
-}
-
-.tab-btn {
-    background: rgba(255, 255, 255, 0.2);
-    border: 2px solid white;
-    color: white;
-    padding: 10px 25px;
-    font-size: 1.2rem;
-    font-weight: bold;
-    border-radius: 20px;
-    cursor: pointer;
-    transition: all 0.3s;
-}
-
-.tab-btn.active, .tab-btn:hover {
-    background: white;
-    color: #1f3a60;
 }
 
 /* メインコンテナ */
@@ -40,7 +16,7 @@ body {
     width: 100%;
     max-width: 1000px;
     background: linear-gradient(to bottom, #4facfe 0%, #00f2fe 100%);
-    padding: 20px 15px;
+    padding: 25px 20px;
     border-radius: 12px;
     box-shadow: 0 15px 35px rgba(0,0,0,0.4);
     box-sizing: border-box;
@@ -50,20 +26,17 @@ body {
 .timeline-header {
     display: flex;
     align-items: center;
-    margin-bottom: 10px;
+    margin-bottom: 15px;
     padding-left: 10px;
 }
 
-.date-badge {
-    width: 180px;
-    background: white;
-    color: #333;
+/* 画面ごとのタイトル（愛媛県 / 全国の天気） */
+.view-title {
+    width: 200px;
+    color: white;
     font-weight: 900;
-    font-size: 1.3rem;
-    padding: 4px 12px;
-    border-radius: 15px;
-    text-align: center;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    font-size: 1.8rem;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.4);
 }
 
 .time-scale {
@@ -75,7 +48,6 @@ body {
     font-weight: bold;
     font-size: 1.3rem;
     text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
-    position: relative;
 }
 
 /* 横バー（行）のデザイン */
@@ -136,21 +108,8 @@ body {
 
 .hourly-icon {
     font-size: 1.6rem;
-    cursor: pointer;
-    transition: transform 0.2s;
     width: 100%;
     text-align: center;
     border-right: 1px solid rgba(255,255,255,0.1);
 }
 .hourly-icon:last-child { border-right: none; }
-.hourly-icon:hover { transform: scale(1.3); }
-
-/* フッター */
-.wn-footer {
-    text-align: right;
-    color: white;
-    font-weight: bold;
-    font-size: 1rem;
-    margin-top: 10px;
-}
-.wn-logo { color: #0088ff; font-weight: 900; font-style: italic;}
