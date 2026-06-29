@@ -1,0 +1,92 @@
+body {
+    margin: 0;
+    padding: 0;
+    background-color: #0055b3; /* 海の青 */
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+/* 地図とパネルを包むコンテナ */
+.weather-map-container {
+    position: relative;
+    width: 100%;
+    max-width: 800px;
+    aspect-ratio: 4 / 3;
+    background-color: #0066cc;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+.base-map {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+/* 天気パネルの共通スタイル */
+.weather-panel {
+    position: absolute;
+    background: white;
+    border-radius: 4px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    width: 160px;
+    overflow: hidden;
+    animation: fadeIn 0.5s ease-out;
+}
+
+.area-name {
+    background-color: #ffffff;
+    color: #333333;
+    font-weight: bold;
+    text-align: center;
+    padding: 4px 0;
+    font-size: 1.1rem;
+    border-bottom: 1px solid #ddd;
+}
+
+.weather-info {
+    display: flex;
+    height: 60px;
+}
+
+.weather-icon-box {
+    flex: 1;
+    background: linear-gradient(135deg, #ff9900 0%, #ff5500 50%, #999999 50%, #cccccc 100%);
+    color: white;
+    font-size: 1.8rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.temp-box {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.temp-high, .temp-low {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+.temp-high { background-color: #ff3333; }
+.temp-low  { background-color: #3333ff; }
+
+/* 各パネルの位置指定（パーセンテージでレスポンシブ対応） */
+.matsuyama { top: 25%; left: 35%; }
+.niihama   { top: 15%; left: 65%; }
+.uwajima   { top: 65%; left: 20%; }
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
