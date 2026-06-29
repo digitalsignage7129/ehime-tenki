@@ -11,6 +11,8 @@
     <div class="weather-timeline-container">
         
         <div class="timeline-header">
+            <div class="date-display" id="date-display">--/--</div>
+            
             <div class="view-title" id="view-title">天気予報</div>
             <div class="time-scale">
                 <div>0</div><div>3</div><div>6</div><div>9</div><div>12</div><div>15</div><div>18</div><div>21</div><div>24</div>
@@ -23,15 +25,14 @@
     </div>
 
     <script>
-        // 気象庁のデータ定義とエリアコード対応表
         const areaMapping = {
             ehime: {
                 title: "愛媛県",
                 centerCode: "380000",
                 cities: [
-                    { name: "新居浜", code: "380020", offset: -1 }, // 松山ベースの気温から-1度する
+                    { name: "新居浜", code: "380020", offset: -1 },
                     { name: "今治",   code: "380020", offset: -1 }, 
-                    { name: "松山",   code: "380010", offset: 0 },  // 基準（中予）
+                    { name: "松山",   code: "380010", offset: 0 },  
                     { name: "西条",   code: "380020", offset: -1 }, 
                     { name: "大洲",   code: "380030", offset: 1 },  
                     { name: "宇和",   code: "380030", offset: -2 }, 
@@ -53,7 +54,6 @@
             }
         };
 
-        // 天気コードを絵文字に変換
         function getWeatherIcon(jmaCode) {
             const code = parseInt(jmaCode);
             if ([100, 101, 102, 123, 124, 130, 131].includes(code)) return "☀️";
@@ -80,10 +80,24 @@
 
                 for (const city of config.cities) {
                     const targetCenter = city.center || config.centerCode;
-                    
-                    // 気象庁の予報JSONを取得
                     const response = await fetch(`https://www.jma.go.jp/bosai/forecast/data/forecast/${targetCenter}.json`);
                     const data = await response.json();
+
+                    // 【改善】気象庁のデータから「予報対象の日付」を取得して画面に反映
+                    try {
+                        const rawDate = new Date(data[0].timeSeries[0].timeDefines[0]);
+                        const month = rawDate.getMonth() + 1;
+                        const date = rawDate.getDate();
+                        const dayNames = ["日", "月", "火", "水", "木", "金", "土"];
+                        const dayOfWeek = dayNames[rawDate.getDay()];
+                        
+                        // 「6/29(月)」のような形式で左上にドカンと表示
+                        document.getElementById('date-display').innerText = `${month}/${date}(${dayOfWeek})`;
+                    } catch(e) {
+                        // 万が一取得失敗した場合はマシンの現在時刻で補完
+                        const now = new Date();
+                        document.getElementById('date-display').innerText = `${now.getMonth()+1}/${now.getDate()}`;
+                    }
 
                     // 1. 天気データの抽出
                     const timeSeries = data[0].timeSeries[0]; 
@@ -92,29 +106,20 @@
                     while(jmaIcons.length < 9) jmaIcons.push(jmaIcons[jmaIcons.length - 1] || "100");
                     const timeline = jmaIcons.slice(0, 9).map(code => getWeatherIcon(code));
 
-                    // 2. 【確実な気温計算】
-                    // 気象庁のデータからベースとなる基準気温（最低・最高）を安全に取得
+                    // 2. 気温計算
                     let baseLow = 19;
                     let baseHigh = 27;
-
                     const tempSeries = data[0].timeSeries.find(s => s.temps);
                     if (tempSeries && tempSeries.areas && tempSeries.areas[0].temps) {
                         const t = tempSeries.areas[0].temps;
-                        // 配列の中身をパースし、有効な数字が入っていればそれをベースにする
                         if (t[0] && !isNaN(parseInt(t[0]))) baseLow = parseInt(t[0]);
                         if (t[1] && !isNaN(parseInt(t[1]))) baseHigh = parseInt(t[1]);
-                        
-                        // 気象庁のデータ特性上、1つの値しか入っていない時間帯の安全ガード
-                        if (baseHigh <= baseLow) {
-                            baseHigh = baseLow + 7;
-                        }
+                        if (baseHigh <= baseLow) baseHigh = baseLow + 7;
                     }
 
-                    // 設定した「都市ごとの地域差（offset）」を足し引きして、確実な数字を作る
                     const low = baseLow + city.offset;
                     const high = baseHigh + city.offset;
 
-                    // HTMLの組み立て
                     let timelineHTML = '';
                     timeline.forEach(icon => {
                         timelineHTML += `<div class="hourly-icon">${icon}</div>`;
