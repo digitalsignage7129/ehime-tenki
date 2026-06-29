@@ -2,52 +2,54 @@
 
 body {
     margin: 0;
-    padding: 20px;
+    padding: 30px; /* 画面端に少しだけ余白を作る */
     background: radial-gradient(circle, #2980b9, #2c3e50);
     font-family: "Hiragino Kaku Gothic ProN", Arial, sans-serif;
     display: flex;
-    justify-content: center;
-    align-items: center;
+    justify-content: center; /* 左右中央配置 */
+    align-items: flex-start; /* 上詰めで配置 */
     min-height: 100vh;
-}
-
-/* メインコンテナ */
-.weather-timeline-container {
-    width: 100%;
-    max-width: 1000px;
-    background: linear-gradient(to bottom, #4facfe 0%, #00f2fe 100%);
-    padding: 25px 20px;
-    border-radius: 12px;
-    box-shadow: 0 15px 35px rgba(0,0,0,0.4);
     box-sizing: border-box;
 }
 
-/* ヘッダー時刻目盛り */
+/* メインコンテナ：max-widthを消して、画面横幅いっぱいに広げます */
+.weather-timeline-container {
+    width: 100%; /* 画面幅いっぱいに広げる */
+    max-width: 95vw; /* モニターの端に少しだけ余裕を持たせる（95%幅） */
+    background: linear-gradient(to bottom, #4facfe 0%, #00f2fe 100%);
+    padding: 30px 25px;
+    border-radius: 16px;
+    box-shadow: 0 20px 45px rgba(0,0,0,0.5);
+    box-sizing: border-box;
+}
+
+/* ヘッダーエリア */
 .timeline-header {
     display: flex;
     align-items: center;
-    margin-bottom: 15px;
-    padding-left: 10px;
+    margin-bottom: 20px;
+    padding-left: 20px;
 }
 
 /* 画面ごとのタイトル（愛媛県 / 全国の天気） */
 .view-title {
-    width: 200px;
+    width: 250px; /* 少し幅を広げました */
     color: white;
     font-weight: 900;
-    font-size: 1.8rem;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.4);
+    font-size: 2.2rem; /* 文字を大きく */
+    text-shadow: 2px 2px 5px rgba(0,0,0,0.5);
 }
 
+/* 時間目盛り */
 .time-scale {
     flex: 1;
     display: flex;
     justify-content: space-between;
-    padding: 0 25px;
+    padding: 0 40px; /* 横幅拡大に合わせて目盛りの位置を調整 */
     color: white;
-    font-weight: bold;
-    font-size: 1.3rem;
-    text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+    font-weight: 900;
+    font-size: 1.6rem; /* 文字を大きく */
+    text-shadow: 1px 1px 4px rgba(0,0,0,0.6);
 }
 
 /* 横バー（行）のデザイン */
@@ -55,43 +57,46 @@ body {
     display: flex;
     align-items: center;
     background: linear-gradient(to bottom, #2c3e50, #1a252f);
-    margin-bottom: 8px;
-    border-radius: 30px;
+    margin-bottom: 12px; /* 行の間隔を少し広げて見やすく */
+    border-radius: 40px; /* 丸みを強化 */
     overflow: hidden;
     border: 1px solid rgba(255,255,255,0.2);
-    box-shadow: inset 0 2px 5px rgba(255,255,255,0.2), 0 4px 8px rgba(0,0,0,0.3);
+    box-shadow: inset 0 2px 5px rgba(255,255,255,0.2), 0 5px 12px rgba(0,0,0,0.4);
+    height: 65px; /* 行自体の高さを太くして視認性アップ */
 }
 
+/* 地域名 */
 .city-name {
-    width: 110px;
+    width: 140px; /* 幅を拡張 */
     color: white;
     font-weight: 900;
-    font-size: 1.4rem;
-    padding-left: 20px;
-    letter-spacing: 1px;
+    font-size: 1.8rem; /* 文字を大きく */
+    padding-left: 30px;
+    letter-spacing: 2px;
 }
 
+/* 気温ゾーン */
 .temp-zone {
     display: flex;
-    width: 90px;
+    width: 120px; /* 幅を拡張 */
     background: linear-gradient(to right, #74b9ff, #ff7f50);
-    height: 45px;
+    height: 100%;
     align-items: center;
-    border-radius: 0 20px 20px 0;
-    padding: 0 8px;
-    gap: 4px;
+    border-radius: 0 30px 30px 0;
+    padding: 0 12px;
+    gap: 6px;
 }
 
 .temp-low, .temp-high {
     flex: 1;
-    background: rgba(255,255,255,0.9);
-    height: 32px;
+    background: rgba(255,255,255,0.95);
+    height: 45px; /* 太く */
     display: flex;
     justify-content: center;
     align-items: center;
-    border-radius: 10px;
+    border-radius: 12px;
     font-weight: 900;
-    font-size: 1.2rem;
+    font-size: 1.5rem; /* 気温数値を大きく */
 }
 .temp-low { color: #0d47a1; }
 .temp-high { color: #b71c1c; }
@@ -102,14 +107,16 @@ body {
     display: flex;
     justify-content: space-around;
     align-items: center;
-    height: 45px;
-    padding: 0 10px;
+    height: 100%;
+    padding: 0 20px;
 }
 
+/* お天気絵文字 */
 .hourly-icon {
-    font-size: 1.6rem;
+    font-size: 2.5rem; /* 絵文字のサイズを大幅にアップ！ */
     width: 100%;
     text-align: center;
-    border-right: 1px solid rgba(255,255,255,0.1);
+    border-right: 1px solid rgba(255,255,255,0.15);
+    line-height: 1;
 }
 .hourly-icon:last-child { border-right: none; }
