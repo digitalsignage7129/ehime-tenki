@@ -3,31 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>リアルタイム時系列天気予報</title>
+    <title>時系列天気予報（リアルタイム）</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <div class="tab-container">
-        <button class="tab-btn active" onclick="switchView('ehime')">愛媛県</button>
-        <button class="tab-btn" onclick="switchView('japan')">全国の天気</button>
-    </div>
-
     <div class="weather-timeline-container">
         
         <div class="timeline-header">
-            <div class="date-badge"><span id="current-date">30</span>(火)</div>
+            <div class="view-title" id="view-title">天気予報</div>
             <div class="time-scale">
                 <div>0</div><div>3</div><div>6</div><div>9</div><div>12</div><div>15</div><div>18</div><div>21</div><div>24</div>
             </div>
         </div>
 
-        <div class="timeline-rows" id="timeline-rows">
-            </div>
-
-        <div class="wn-footer">
-            <span class="wn-logo">wn</span> weathernews
-        </div>
+        <div class="timeline-rows" id="timeline-rows"></div>
     </div>
 
     <script src="app.js"></script>
