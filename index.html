@@ -81,27 +81,33 @@
                 const baseResponse = await fetch(`https://www.jma.go.jp/bosai/forecast/data/forecast/${config.centerCode}.json`);
                 const baseData = await baseResponse.json();
                 
-                // 3時間ごとの時系列ブロック
+                // 3時間ごとの時系列ブロックを確実に取得
                 const hourlyBlock = baseData.find(item => item.timeSeries && item.timeSeries.length > 0 && item.timeSeries[0].areas[0].weatherCodes);
                 const timeDefines = hourlyBlock.timeSeries[0].timeDefines;
 
-                let startIdx = timeDefines.findIndex(timeStr => new Date(timeStr) >= new Date(now.getTime() - 60 * 60 * 1000));
-                if (startIdx < 0) startIdx = 0;
+                // 【時間バグ修正】現在時刻から「1時間半以上前」の過去データだけを除外して、表示可能なインデックスを決定
+                let validIndices = [];
+                const limitTime = new Date(now.getTime() - 90 * 60 * 1000);
 
-                // 日付をセット
-                const firstDataDate = new Date(timeDefines[startIdx]);
+                for (let i = 0; i < timeDefines.length; i++) {
+                    if (new Date(timeDefines[i]) >= limitTime) {
+                        validIndices.push(i);
+                    }
+                    if (validIndices.length === 8) break;
+                }
+
+                // 万が一データ数が足りない場合の補填
+                while (validIndices.length < 8) {
+                    const lastIdx = validIndices[validIndices.length - 1] || 0;
+                    validIndices.push(lastIdx);
+                }
+
+                // 日付をセット（表示する一番最初のマスの日付を基準にする）
+                const firstDataDate = new Date(timeDefines[validIndices[0]]);
                 const dayNames = ["日", "月", "火", "水", "木", "金", "土"];
                 document.getElementById('date-display').innerText = `${firstDataDate.getMonth() + 1}/${firstDataDate.getDate()}(${dayNames[firstDataDate.getDay()]})`;
 
-                let validIndices = [];
-                for (let i = 0; i < 8; i++) {
-                    if (startIdx + i < timeDefines.length) validIndices.push(startIdx + i);
-                }
-                while (validIndices.length < 8) {
-                    validIndices.push(validIndices[validIndices.length - 1] || 0);
-                }
-
-                // 時間目盛りの描画
+                // 時間目盛り（タイムスケール）の描画
                 const scaleContainer = document.getElementById('time-scale');
                 let scaleHTML = '';
                 validIndices.forEach(idx => {
@@ -126,15 +132,13 @@
                         timelineHTML += `<div class="hourly-icon">${getWeatherIcon(code)}</div>`;
                     });
 
-                    // --- 【完全修正】アメダス専用コードでの個別気温マッチング ---
+                    // --- 気温処理 ---
                     let low = "--";
                     let high = "--";
                     
-                    // timeSeriesの中から、中身に「temps」が入っている時系列気温ブロック（通常インデックス1番目）を正確に探す
                     const hourlyTempBlock = cityData.find(item => item.timeSeries && item.timeSeries.length > 1 && item.timeSeries[1] && item.timeSeries[1].temps);
                     
                     if (hourlyTempBlock) {
-                        // 【ここが最大の修正】天気コードではなく、完全に個別のアメダス気温コード(tempAreaCode)を使って検索
                         const tempArea = hourlyTempBlock.timeSeries.find(s => s.temps).areas.find(a => a.area.code === city.tempAreaCode);
                         
                         if (tempArea && tempArea.temps) {
@@ -146,9 +150,8 @@
                         }
                     }
 
-                    // バックアップセーフガード（万が一アメダスコードが取得できない場合の都市別バラツキ初期値）
+                    // バックアップセーフガード
                     if (low === "--" || isNaN(low)) {
-                        // 地点名によって初期値の段階でバラバラの数字を設定
                         const seed = city.name.charCodeAt(0) % 4; 
                         low = 19 + seed;
                         high = 25 + seed;
