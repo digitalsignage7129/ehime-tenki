@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>愛媛県の天気予報（リアルタイム風）</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="weather-map-container">
+        <svg class="base-map" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+            <path d="M150,450 L250,400 L350,410 L450,250 L550,220 L650,280 L700,400 L550,550 L350,500 L250,550 Z" fill="#a2e3a6" stroke="#ffffff" stroke-width="3"/>
+            <path d="M0,0 L800,0 L800,600 L0,600 Z" fill="#0066cc" opacity="0.1" style="z-index: -1;"/>
+        </svg>
+
+        <div class="weather-panel matsuyama" id="panel-matsuyama">
+            <div class="area-name">松山</div>
+            <div class="weather-info">
+                <div class="weather-icon-box">☀️☁️</div>
+                <div class="temp-box">
+                    <div class="temp-high"><span class="val">--</span>℃</div>
+                    <div class="temp-low"><span class="val">--</span>℃</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="weather-panel niihama" id="panel-niihama">
+            <div class="area-name">新居浜</div>
+            <div class="weather-info">
+                <div class="weather-icon-box">☀️☁️</div>
+                <div class="temp-box">
+                    <div class="temp-high"><span class="val">--</span>℃</div>
+                    <div class="temp-low"><span class="val">--</span>℃</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="weather-panel uwajima" id="panel-uwajima">
+            <div class="area-name">宇和島</div>
+            <div class="weather-info">
+                <div class="weather-icon-box">☀️☁️</div>
+                <div class="temp-box">
+                    <div class="temp-high"><span class="val">--</span>℃</div>
+                    <div class="temp-low"><span class="val">--</span>℃</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
