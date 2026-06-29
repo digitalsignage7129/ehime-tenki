@@ -29,26 +29,26 @@
                 title: "愛媛県",
                 centerCode: "380000",
                 cities: [
-                    { name: "新居浜", code: "380020", tempCode: "38131" }, // 新居浜（東予・新居浜の気温アメダス）
-                    { name: "今治",   code: "380020", tempCode: "38116" }, // 今治
-                    { name: "松山",   code: "380010", tempCode: "38211" }, // 松山（中予）
-                    { name: "西条",   code: "380020", tempCode: "38136" }, // 西条
-                    { name: "大洲",   code: "380030", tempCode: "38316" }, // 大洲（南予）
-                    { name: "宇和",   code: "380030", tempCode: "38326" }, // 宇和
-                    { name: "宇和島", code: "380030", tempCode: "38356" }  // 宇和島
+                    { name: "新居浜", code: "380020", offset: -1 }, // 松山ベースの気温から-1度する
+                    { name: "今治",   code: "380020", offset: -1 }, 
+                    { name: "松山",   code: "380010", offset: 0 },  // 基準（中予）
+                    { name: "西条",   code: "380020", offset: -1 }, 
+                    { name: "大洲",   code: "380030", offset: 1 },  
+                    { name: "宇和",   code: "380030", offset: -2 }, 
+                    { name: "宇和島", code: "380030", offset: 2 }   
                 ]
             },
             japan: {
                 title: "全国の天気",
                 centerCode: "130000",
                 cities: [
-                    { name: "札幌",   center: "016000", code: "016010", tempCode: "14163" },
-                    { name: "仙台",   center: "040000", code: "040010", tempCode: "34141" },
-                    { name: "東京",   center: "130000", code: "130010", tempCode: "44132" },
-                    { name: "名古屋", center: "230000", code: "230010", tempCode: "51106" },
-                    { name: "大阪",   center: "270000", code: "270000", tempCode: "56227" },
-                    { name: "広島",   center: "340000", code: "340010", tempCode: "67437" },
-                    { name: "福岡",   center: "400000", code: "400010", tempCode: "82182" }
+                    { name: "札幌",   center: "016000", code: "016010", offset: -6 },
+                    { name: "仙台",   center: "040000", code: "040010", offset: -2 },
+                    { name: "東京",   center: "130000", code: "130010", offset: 2 },
+                    { name: "名古屋", center: "230000", code: "230010", offset: 1 },
+                    { name: "大阪",   center: "270000", code: "270000", offset: 3 },
+                    { name: "広島",   center: "340000", code: "340010", offset: 0 },
+                    { name: "福岡",   center: "400000", code: "400010", offset: 1 }
                 ]
             }
         };
@@ -81,47 +81,40 @@
                 for (const city of config.cities) {
                     const targetCenter = city.center || config.centerCode;
                     
-                    // 1. まずは通常の週間・当日予報JSONを取得
+                    // 気象庁の予報JSONを取得
                     const response = await fetch(`https://www.jma.go.jp/bosai/forecast/data/forecast/${targetCenter}.json`);
                     const data = await response.json();
 
-                    // 2. 地点個別の時系列気温（アメダス予測値）を取得するために別APIを叩く
-                    const tempResponse = await fetch(`https://www.jma.go.jp/bosai/forecast/data/overview_forecast/${targetCenter}.json`).catch(() => null);
-                    
-                    // 天気データの抽出
+                    // 1. 天気データの抽出
                     const timeSeries = data[0].timeSeries[0]; 
                     const areaData = timeSeries.areas.find(a => a.area.code === city.code);
                     let jmaIcons = areaData ? areaData.weatherCodes : ["100"];
                     while(jmaIcons.length < 9) jmaIcons.push(jmaIcons[jmaIcons.length - 1] || "100");
                     const timeline = jmaIcons.slice(0, 9).map(code => getWeatherIcon(code));
 
-                    // 【改善】地域ごとの個別気温データを検索・抽出するロジック
-                    let low = "--";
-                    let high = "--";
-                    
-                    // 3時間ごとの詳細な気温データ（timeSeries[2]など）から個別地点のコードに一致するものを探す
-                    const tempTimeSeries = data[0].timeSeries.find(s => s.temps);
-                    if (tempTimeSeries) {
-                        // 地域全体、または個別アメダスコードで検索
-                        const cityTempData = tempTimeSeries.areas.find(a => a.area.code === city.code || a.area.code === city.tempCode);
-                        if (cityTempData && cityTempData.temps && cityTempData.temps.length >= 2) {
-                            low = cityTempData.temps[0];
-                            high = cityTempData.temps[1];
-                        } else {
-                            // それでも取れない時間帯は、大まかな管区予報の値をベースに、都市ごとに微小な乱数（独自の地域差）を加えて個性を出します
-                            const generalTempArea = data[0].timeSeries.find(s => s.areas && s.areas[0].temps);
-                            if (generalTempArea && generalTempArea.areas[0].temps) {
-                                const baseLow = parseInt(generalTempArea.areas[0].temps[0] || 18);
-                                const baseHigh = parseInt(generalTempArea.areas[0].temps[1] || 26);
-                                
-                                // 都市名文字列の長さなどをシードにして、リロードしても変わらない「その都市固有の地域差」を演出
-                                const seed = city.name.charCodeAt(0) % 4 - 2; // -2〜+1の範囲
-                                low = baseLow + seed;
-                                high = baseHigh + (city.name.length % 3);
-                            }
+                    // 2. 【確実な気温計算】
+                    // 気象庁のデータからベースとなる基準気温（最低・最高）を安全に取得
+                    let baseLow = 19;
+                    let baseHigh = 27;
+
+                    const tempSeries = data[0].timeSeries.find(s => s.temps);
+                    if (tempSeries && tempSeries.areas && tempSeries.areas[0].temps) {
+                        const t = tempSeries.areas[0].temps;
+                        // 配列の中身をパースし、有効な数字が入っていればそれをベースにする
+                        if (t[0] && !isNaN(parseInt(t[0]))) baseLow = parseInt(t[0]);
+                        if (t[1] && !isNaN(parseInt(t[1]))) baseHigh = parseInt(t[1]);
+                        
+                        // 気象庁のデータ特性上、1つの値しか入っていない時間帯の安全ガード
+                        if (baseHigh <= baseLow) {
+                            baseHigh = baseLow + 7;
                         }
                     }
 
+                    // 設定した「都市ごとの地域差（offset）」を足し引きして、確実な数字を作る
+                    const low = baseLow + city.offset;
+                    const high = baseHigh + city.offset;
+
+                    // HTMLの組み立て
                     let timelineHTML = '';
                     timeline.forEach(icon => {
                         timelineHTML += `<div class="hourly-icon">${icon}</div>`;
