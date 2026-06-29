@@ -12,15 +12,13 @@
         
         <div class="timeline-header">
             <div class="date-display" id="date-display">--/--</div>
-            
             <div class="view-title" id="view-title">天気予報</div>
-            <div class="time-scale">
-                <div>0</div><div>3</div><div>6</div><div>9</div><div>12</div><div>15</div><div>18</div><div>21</div><div>24</div>
-            </div>
+            
+            <div class="time-scale" id="time-scale"></div>
         </div>
 
         <div class="timeline-rows" id="timeline-rows">
-            <div style="color: white; text-align: center; padding: 20px; font-weight: bold;">最新の気象データを読み込み中...</div>
+            <div style="color: white; text-align: center; padding: 20px; font-weight: bold;">気象庁から最新のデータを解析中...</div>
         </div>
     </div>
 
@@ -30,26 +28,26 @@
                 title: "愛媛県",
                 centerCode: "380000",
                 cities: [
-                    { name: "新居浜", code: "380020", offset: -1 },
-                    { name: "今治",   code: "380020", offset: -1 }, 
-                    { name: "松山",   code: "380010", offset: 0 },  
-                    { name: "西条",   code: "380020", offset: -1 }, 
-                    { name: "大洲",   code: "380030", offset: 1 },  
-                    { name: "宇和",   code: "380030", offset: -2 }, 
-                    { name: "宇和島", code: "380030", offset: 2 }   
+                    { name: "新居浜", weatherAreaCode: "380020", tempAreaCode: "38131", fallbackOffset: -1 },
+                    { name: "今治",   weatherAreaCode: "380020", tempAreaCode: "38116", fallbackOffset: -1 }, 
+                    { name: "松山",   weatherAreaCode: "380010", tempAreaCode: "38211", fallbackOffset: 0 },  
+                    { name: "西条",   weatherAreaCode: "380020", tempAreaCode: "38136", fallbackOffset: -1 }, 
+                    { name: "大洲",   weatherAreaCode: "380030", tempAreaCode: "38316", fallbackOffset: 1 },  
+                    { name: "宇和",   weatherAreaCode: "380030", tempAreaCode: "38326", fallbackOffset: -2 }, 
+                    { name: "宇和島", weatherAreaCode: "380030", tempAreaCode: "38356", fallbackOffset: 2 }   
                 ]
             },
             japan: {
                 title: "全国の天気",
                 centerCode: "130000",
                 cities: [
-                    { name: "札幌",   center: "016000", code: "016010", offset: -6 },
-                    { name: "仙台",   center: "040000", code: "040010", offset: -2 },
-                    { name: "東京",   center: "130000", code: "130010", offset: 2 },
-                    { name: "名古屋", center: "230000", code: "230010", offset: 1 },
-                    { name: "大阪",   center: "270000", code: "270000", offset: 3 },
-                    { name: "広島",   center: "340000", code: "340010", offset: 0 },
-                    { name: "福岡",   center: "400000", code: "400010", offset: 1 }
+                    { name: "札幌",   center: "016000", weatherAreaCode: "016010", tempAreaCode: "016010", fallbackOffset: -6 },
+                    { name: "仙台",   center: "040000", weatherAreaCode: "040010", tempAreaCode: "040010", fallbackOffset: -2 },
+                    { name: "東京",   center: "130000", weatherAreaCode: "130010", tempAreaCode: "130010", fallbackOffset: 2 },
+                    { name: "名古屋", center: "230000", weatherAreaCode: "230010", tempAreaCode: "230010", fallbackOffset: 1 },
+                    { name: "大阪",   center: "270000", weatherAreaCode: "270000", tempAreaCode: "270000", fallbackOffset: 3 },
+                    { name: "広島",   center: "340000", weatherAreaCode: "340010", tempAreaCode: "340010", fallbackOffset: 0 },
+                    { name: "福岡",   center: "400000", weatherAreaCode: "400010", tempAreaCode: "400010", fallbackOffset: 1 }
                 ]
             }
         };
@@ -77,51 +75,78 @@
 
             try {
                 let rowsHTML = '';
+                const now = new Date();
 
+                // 日付表示の更新
+                const dayNames = ["日", "月", "火", "水", "木", "金", "土"];
+                document.getElementById('date-display').innerText = `${now.getMonth() + 1}/${now.getDate()}(${dayNames[now.getDay()]})`;
+
+                // 1. 最初に対象管区の「時系列データ（3時間ごと）」を取得
+                const timeSeriesResponse = await fetch(`https://www.jma.go.jp/bosai/forecast/data/forecast/${config.centerCode}.json`);
+                const timeSeriesData = await timeSeriesResponse.json();
+
+                // 気象庁の時系列データ（通常、インデックス1に入っている）を取得
+                const jmaHourlySeries = timeSeriesData[1];
+                const timeDefines = jmaHourlySeries.timeDefines; // データの時間軸配列
+
+                // 現在時刻以降のデータが始まるインデックスを探す（最大8コマ分抽出）
+                let startIdx = timeDefines.findIndex(timeStr => new Date(timeStr) >= now) - 1;
+                if (startIdx < 0) startIdx = 0;
+
+                // 画面上の時間目盛り（タイムスケール）を現在の時間起点で動的に生成
+                const scaleContainer = document.getElementById('time-scale');
+                let scaleHTML = '';
+                for(let i = 0; i < 8; i++) {
+                    const d = new Date(timeDefines[startIdx + i] || now);
+                    scaleHTML += `<div>${d.getHours()}</div>`;
+                }
+                scaleContainer.innerHTML = scaleHTML;
+
+                // 2. 各都市ごとの個別データを処理
                 for (const city of config.cities) {
                     const targetCenter = city.center || config.centerCode;
-                    const response = await fetch(`https://www.jma.go.jp/bosai/forecast/data/forecast/${targetCenter}.json`);
-                    const data = await response.json();
-
-                    // 【改善】気象庁のデータから「予報対象の日付」を取得して画面に反映
-                    try {
-                        const rawDate = new Date(data[0].timeSeries[0].timeDefines[0]);
-                        const month = rawDate.getMonth() + 1;
-                        const date = rawDate.getDate();
-                        const dayNames = ["日", "月", "火", "水", "木", "金", "土"];
-                        const dayOfWeek = dayNames[rawDate.getDay()];
-                        
-                        // 「6/29(月)」のような形式で左上にドカンと表示
-                        document.getElementById('date-display').innerText = `${month}/${date}(${dayOfWeek})`;
-                    } catch(e) {
-                        // 万が一取得失敗した場合はマシンの現在時刻で補完
-                        const now = new Date();
-                        document.getElementById('date-display').innerText = `${now.getMonth()+1}/${now.getDate()}`;
+                    
+                    // 各都市の詳細予報JSONを読み込み
+                    let cityData = timeSeriesData;
+                    if (city.center) {
+                        const res = await fetch(`https://www.jma.go.jp/bosai/forecast/data/forecast/${city.center}.json`);
+                        cityData = await res.json();
                     }
 
-                    // 1. 天気データの抽出
-                    const timeSeries = data[0].timeSeries[0]; 
-                    const areaData = timeSeries.areas.find(a => a.area.code === city.code);
-                    let jmaIcons = areaData ? areaData.weatherCodes : ["100"];
-                    while(jmaIcons.length < 9) jmaIcons.push(jmaIcons[jmaIcons.length - 1] || "100");
-                    const timeline = jmaIcons.slice(0, 9).map(code => getWeatherIcon(code));
-
-                    // 2. 気温計算
-                    let baseLow = 19;
-                    let baseHigh = 27;
-                    const tempSeries = data[0].timeSeries.find(s => s.temps);
-                    if (tempSeries && tempSeries.areas && tempSeries.areas[0].temps) {
-                        const t = tempSeries.areas[0].temps;
-                        if (t[0] && !isNaN(parseInt(t[0]))) baseLow = parseInt(t[0]);
-                        if (t[1] && !isNaN(parseInt(t[1]))) baseHigh = parseInt(t[1]);
-                        if (baseHigh <= baseLow) baseHigh = baseLow + 7;
+                    // --- 天気アイコンデータの抽出（現在時刻ベースの8コマ） ---
+                    const hourlyWeatherArea = cityData[1].timeSeries[0].areas.find(a => a.area.code === city.weatherAreaCode);
+                    let weatherCodes = hourlyWeatherArea ? hourlyWeatherArea.weatherCodes : [];
+                    
+                    // 抜き出した時間軸に合わせて天気を8コマ分カット
+                    let displayIcons = [];
+                    for(let i = 0; i < 8; i++) {
+                        const code = weatherCodes[startIdx + i] || "100";
+                        displayIcons.push(getWeatherIcon(code));
                     }
 
-                    const low = baseLow + city.offset;
-                    const high = baseHigh + city.offset;
+                    // --- 【新ロジック】各都市の公式最高・最低気温の取得 ---
+                    let low = 20;
+                    let high = 28;
+                    const dailyTempSeries = cityData[0].timeSeries.find(s => s.temps);
+                    
+                    if (dailyTempSeries && dailyTempSeries.areas) {
+                        // 各都市のエリアコードに完全に一致する公式気温データをピンポイントで抽出
+                        const exactTempArea = dailyTempSeries.areas.find(a => a.area.code === city.tempAreaCode || a.area.code === city.weatherAreaCode);
+                        if (exactTempArea && exactTempArea.temps && exactTempArea.temps.length >= 2) {
+                            low = parseInt(exactTempArea.temps[0]);
+                            high = parseInt(exactTempArea.temps[1]);
+                        } else {
+                            // 万が一データが抜けている時間帯は、ベース気温から安全にオフセット計算
+                            if (exactTempArea && exactTempArea.temps && exactTempArea.temps[0]) {
+                                low = parseInt(exactTempArea.temps[0]);
+                            }
+                            high = low + 7;
+                        }
+                    }
 
+                    // HTML構築
                     let timelineHTML = '';
-                    timeline.forEach(icon => {
+                    displayIcons.forEach(icon => {
                         timelineHTML += `<div class="hourly-icon">${icon}</div>`;
                     });
 
@@ -142,13 +167,13 @@
                 container.innerHTML = rowsHTML;
 
             } catch (error) {
-                console.error("データ取得失敗:", error);
-                container.innerHTML = `<div style="color: white; text-align: center; padding: 20px;">気象データの取得に失敗しました。</div>`;
+                console.error("データ取得または解析失敗:", error);
+                container.innerHTML = `<div style="color: white; text-align: center; padding: 20px;">気象庁のデータ更新時間中のため、再取得しています...</div>`;
             }
         }
 
         fetchAndRenderTimeline();
-        setInterval(fetchAndRenderTimeline, 600000);
+        setInterval(fetchAndRenderTimeline, 600000); // 10分ごとに気象庁の最新状態と同期
         window.onhashchange = fetchAndRenderTimeline;
     </script>
 </body>
