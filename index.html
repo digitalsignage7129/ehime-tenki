@@ -18,7 +18,7 @@
         </div>
 
         <div class="timeline-rows" id="timeline-rows">
-            <div style="color: white; text-align: center; padding: 20px; font-weight: bold;">データを読み込み中...</div>
+            <div style="color: white; text-align: center; padding: 20px; font-weight: bold;">最新の公式気象データを読み込み中...</div>
         </div>
     </div>
 
@@ -28,13 +28,13 @@
                 title: "愛媛県",
                 centerCode: "380000",
                 cities: [
-                    { name: "新居浜", weatherAreaCode: "380020", tempAreaCode: "38131" },
-                    { name: "今治",   weatherAreaCode: "380020", tempAreaCode: "38116" }, 
-                    { name: "松山",   weatherAreaCode: "380010", tempAreaCode: "38211" },  
-                    { name: "西条",   weatherAreaCode: "380020", tempAreaCode: "38136" }, 
-                    { name: "大洲",   weatherAreaCode: "380030", tempAreaCode: "38316" },  
-                    { name: "宇和",   weatherAreaCode: "380030", tempAreaCode: "38326" }, 
-                    { name: "宇和島", weatherAreaCode: "380030", tempAreaCode: "38356" }   
+                    { name: "新居浜", center: "380000", weatherAreaCode: "380020", tempAreaCode: "38131" },
+                    { name: "今治",   center: "380000", weatherAreaCode: "380020", tempAreaCode: "38116" }, 
+                    { name: "松山",   center: "380000", weatherAreaCode: "380010", tempAreaCode: "38211" },  
+                    { name: "西条",   center: "380000", weatherAreaCode: "380020", tempAreaCode: "38136" }, 
+                    { name: "大洲",   center: "380000", weatherAreaCode: "380030", tempAreaCode: "38316" },  
+                    { name: "宇和",   center: "380000", weatherAreaCode: "380030", tempAreaCode: "38326" }, 
+                    { name: "宇和島", center: "380000", weatherAreaCode: "380030", tempAreaCode: "38356" }   
                 ]
             },
             japan: {
@@ -77,35 +77,36 @@
                 let rowsHTML = '';
                 const now = new Date();
 
-                // 1. 基準となる気象庁データを読み込む
+                // 基準JSONの読み込み
                 const baseResponse = await fetch(`https://www.jma.go.jp/bosai/forecast/data/forecast/${config.centerCode}.json`);
                 const baseData = await baseResponse.json();
                 
-                // 時系列予報ブロックの特定
+                // 時系列予報（3時間ごと）ブロックの取得
                 const hourlySeries = baseData.find(item => item.timeSeries && item.timeSeries.length > 0 && item.timeSeries[0].areas[0].weatherCodes);
                 const timeDefines = hourlySeries.timeSeries[0].timeDefines;
 
-                // 直近の時間インデックスを特定
+                // 現在時刻に基づいた開始位置の特定（過去1時間以内〜未来）
                 let startIdx = timeDefines.findIndex(timeStr => new Date(timeStr) >= new Date(now.getTime() - 60 * 60 * 1000));
                 if (startIdx < 0) startIdx = 0;
 
-                // 表示対象日の確定（タイムラインの先頭が指す日付）
-                const targetDate = new Date(timeDefines[startIdx]);
-                const dayNames = ["日", "月", "火", "水", "木", "金", "土"];
-                document.getElementById('date-display').innerText = `${targetDate.getMonth() + 1}/${targetDate.getDate()}(${dayNames[targetDate.getDay()]})`;
+                // 【日付決定】タイムラインの最初のコマが「明日」を指しているか判定（17時以降の夜間対策）
+                const firstDataDate = new Date(timeDefines[startIdx]);
+                const isTomorrowMode = firstDataDate.getDate() !== now.getDate();
 
-                // 8コマ分の時間インデックス配列を作成
+                // ヘッダーの日付表示を更新
+                const dayNames = ["日", "月", "火", "水", "木", "金", "土"];
+                document.getElementById('date-display').innerText = `${firstDataDate.getMonth() + 1}/${firstDataDate.getDate()}(${dayNames[firstDataDate.getDay()]})`;
+
+                // 8コマ分（24時間）のインデックスを抽出
                 let validIndices = [];
                 for (let i = 0; i < 8; i++) {
-                    if (startIdx + i < timeDefines.length) {
-                        validIndices.push(startIdx + i);
-                    }
+                    if (startIdx + i < timeDefines.length) validIndices.push(startIdx + i);
                 }
                 while (validIndices.length < 8) {
                     validIndices.push(validIndices[validIndices.length - 1] || 0);
                 }
 
-                // 時間目盛りの描画
+                // 時間目盛り（タイムスケール）を描画
                 const scaleContainer = document.getElementById('time-scale');
                 let scaleHTML = '';
                 validIndices.forEach(idx => {
@@ -114,7 +115,7 @@
                 });
                 scaleContainer.innerHTML = scaleHTML;
 
-                // 2. 各都市のループ処理
+                // 各都市ごとのデータ処理
                 for (const city of config.cities) {
                     const res = await fetch(`https://www.jma.go.jp/bosai/forecast/data/forecast/${city.center}.json`);
                     const cityData = await res.json();
@@ -130,39 +131,38 @@
                         displayIcons.push(getWeatherIcon(code));
                     });
 
-                    // --- 【修正】その日「1日」の公式最低・最高気温をシンプルに取得 ---
+                    // --- 【案①ロジック】その日の公式最低・最高気温の完全抽出 ---
                     let low = "--";
                     let high = "--";
                     
-                    // 気象庁の「日予報ブロック」から該当都市の気温を抽出
                     const dailyTempSeries = cityData[0].timeSeries.find(s => s.temps);
                     if (dailyTempSeries && dailyTempSeries.areas) {
                         const exactTempArea = dailyTempSeries.areas.find(a => a.area.code === city.tempAreaCode || a.area.code === city.weatherAreaCode);
+                        
                         if (exactTempArea && exactTempArea.temps) {
-                            // index 0:今日、index 1:明日 などの「1日のまとめデータ」
-                            // 朝〜夕方までは「今日の気温」、深夜などデータが切り替わった後は「明日の気温」を自動追従
-                            const tStr0 = exactTempArea.temps[0];
-                            const tStr1 = exactTempArea.temps[1];
-
-                            // タイムラインの先頭が「今日」か「明日」かで、引っ張る気温の位置を変える
-                            if (targetDate.getDate() === now.getDate()) {
-                                // 今日のデータ
-                                low = tStr0 ? parseInt(tStr0) : "--";
-                                high = tStr1 ? parseInt(tStr1) : "--";
+                            const t = exactTempArea.temps; // 気象庁の公式まとめ気温配列
+                            
+                            if (!isTomorrowMode) {
+                                // ◆ 昼間モード（画面が「今日」を指している時）
+                                // index 0が今日の最低、index 1が今日の最高。夜になると最低気温(index 0)が気象庁側で削除され空文字列 "" になる
+                                low = (t[0] && t[0] !== "") ? parseInt(t[0]) : "--";
+                                high = (t[1] && t[1] !== "") ? parseInt(t[1]) : "--";
+                                
+                                // もし夜間で今日の最低(t[0])が発表終了になっていたら、代わりに今日の最高(t[1])を入れ、最低枠は「--」にする（テレビと同じ）
+                                if (t[0] === "" || !t[0]) {
+                                    low = "--";
+                                    high = t[1] ? parseInt(t[1]) : "--";
+                                }
                             } else {
-                                // 夜間などでタイムラインが明日ベースに突入している場合は明日の気温
-                                low = tStr1 ? parseInt(tStr1) : "--";
-                                high = exactTempArea.temps[2] ? parseInt(exactTempArea.temps[2]) : "--";
+                                // ◆ 夜間モード（画面が完全に「明日」の予報に切り替わっている時）
+                                // 気象庁の夜17時発表データでは、index 0＝明日の最低、index 1＝明日の最高 になります
+                                low = t[0] ? parseInt(t[0]) : "--";
+                                high = t[1] ? parseInt(t[1]) : "--";
                             }
                         }
                     }
 
-                    // 気象庁が夜間に「今日の最低気温」を削除した場合は、過去の固定値にせずハイフン（発表終了）にするか、
-                    // 見栄えのために最低限の数字（時系列の最低値）で安全に埋める
-                    if (low === "--" || isNaN(low)) low = 20; 
-                    if (high === "--" || isNaN(high)) high = low + 6;
-
-                    // HTML構築
+                    // HTML構築（気温が発表終了のものは「--」と綺麗に表示されます）
                     let timelineHTML = '';
                     displayIcons.forEach(icon => {
                         timelineHTML += `<div class="hourly-icon">${icon}</div>`;
@@ -186,12 +186,12 @@
 
             } catch (error) {
                 console.error("データ解析エラー:", error);
-                container.innerHTML = `<div style="color: white; text-align: center; padding: 20px;">データの読み込みに失敗しました。</div>`;
+                container.innerHTML = `<div style="color: white; text-align: center; padding: 20px;">気象データを読み込み中...</div>`;
             }
         }
 
         fetchAndRenderTimeline();
-        setInterval(fetchAndRenderTimeline, 600000);
+        setInterval(fetchAndRenderTimeline, 600000); // 10分ごとに更新
         window.onhashchange = fetchAndRenderTimeline;
     </script>
 </body>
