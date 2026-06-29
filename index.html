@@ -3,48 +3,106 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>愛媛県の天気予報（リアルタイム風）</title>
+    <title>愛媛県の天気予報（リアルタイム）</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
     <div class="weather-map-container">
-        <svg class="base-map" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
-            <path d="M150,450 L250,400 L350,410 L450,250 L550,220 L650,280 L700,400 L550,550 L350,500 L250,550 Z" fill="#a2e3a6" stroke="#ffffff" stroke-width="3"/>
-            <path d="M0,0 L800,0 L800,600 L0,600 Z" fill="#0066cc" opacity="0.1" style="z-index: -1;"/>
-        </svg>
-
-        <div class="weather-panel matsuyama" id="panel-matsuyama">
-            <div class="area-name">松山</div>
-            <div class="weather-info">
-                <div class="weather-icon-box">☀️☁️</div>
-                <div class="temp-box">
-                    <div class="temp-high"><span class="val">--</span>℃</div>
-                    <div class="temp-low"><span class="val">--</span>℃</div>
-                </div>
-            </div>
+        <!-- タイトルエリア -->
+        <div class="map-title">
+            <span class="date-highlight" id="today-date">26日</span>の天気
         </div>
 
+        <!-- 背景：愛媛県リアル風SVG地図 -->
+        <svg class="base-map" viewBox="0 0 1024 768" xmlns="http://www.w3.org/2000/svg">
+            <!-- 海の背景 -->
+            <rect width="1024" height="768" fill="#0052cc"/>
+            <!-- 他県・本州・九州（グレーの陸地） -->
+            <path d="M 0,0 L 400,0 L 420,100 L 600,80 L 1024,150 L 1024,300 L 900,450 L 1024,550 L 1024,768 L 700,768 L 650,550 L 550,520 L 450,580 L 300,768 L 0,768 Z" fill="#99ccff" opacity="0.4"/>
+            <!-- 愛媛県（緑の陸地）と四国山地 -->
+            <path d="M 520,130 C 560,110 650,230 750,250 C 850,270 950,280 1024,350 L 1024,450 C 950,450 880,520 850,560 C 800,600 700,550 630,550 C 580,600 500,600 440,730 C 370,768 350,700 370,650 C 300,610 250,550 290,480 C 350,430 310,380 200,430 C 150,450 60,490 30,510 C 50,460 100,450 140,430 C 230,410 330,290 320,260 C 310,210 210,240 160,260 C 120,220 150,180 170,140 C 210,130 230,170 260,180 C 300,120 400,150 460,170 C 490,140 500,140 520,130 Z" fill="#9cd99c" stroke="#ffffff" stroke-width="4" stroke-linejoin="round"/>
+        </svg>
+
+        <!-- 天気パネルグループ -->
+        <!-- 新居浜 -->
         <div class="weather-panel niihama" id="panel-niihama">
             <div class="area-name">新居浜</div>
             <div class="weather-info">
-                <div class="weather-icon-box">☀️☁️</div>
+                <div class="weather-status-wrap">
+                    <div class="weather-icon sun"></div>
+                    <div class="weather-icon cloud-overlap"></div>
+                </div>
                 <div class="temp-box">
-                    <div class="temp-high"><span class="val">--</span>℃</div>
-                    <div class="temp-low"><span class="val">--</span>℃</div>
+                    <div class="temp-high"><span class="val">--</span><span class="unit">℃</span></div>
+                    <div class="temp-low"><span class="val">--</span><span class="unit">℃</span></div>
                 </div>
             </div>
         </div>
 
+        <!-- 松山 -->
+        <div class="weather-panel matsuyama" id="panel-matsuyama">
+            <div class="area-name">松山</div>
+            <div class="weather-info">
+                <div class="weather-status-wrap">
+                    <div class="weather-icon sun"></div>
+                    <div class="weather-icon cloud-overlap"></div>
+                </div>
+                <div class="temp-box">
+                    <div class="temp-high"><span class="val">--</span><span class="unit">℃</span></div>
+                    <div class="temp-low"><span class="val">--</span><span class="unit">℃</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 石鎚山 -->
+        <div class="weather-panel ishizuchi" id="panel-ishizuchi">
+            <div class="area-name">石鎚山</div>
+            <div class="weather-info">
+                <div class="weather-status-wrap">
+                    <div class="weather-icon sun"></div>
+                    <div class="weather-icon cloud-overlap"></div>
+                </div>
+                <div class="temp-box">
+                    <div class="temp-high"><span class="val">--</span><span class="unit">℃</span></div>
+                    <div class="temp-low"><span class="val">--</span><span class="unit">℃</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 八幡浜 -->
+        <div class="weather-panel yawatahama" id="panel-yawatahama">
+            <div class="area-name">八幡浜</div>
+            <div class="weather-info">
+                <div class="weather-status-wrap">
+                    <div class="weather-icon sun"></div>
+                    <div class="weather-icon cloud-overlap"></div>
+                </div>
+                <div class="temp-box">
+                    <div class="temp-high"><span class="val">--</span><span class="unit">℃</span></div>
+                    <div class="temp-low"><span class="val">--</span><span class="unit">℃</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 宇和島 -->
         <div class="weather-panel uwajima" id="panel-uwajima">
             <div class="area-name">宇和島</div>
             <div class="weather-info">
-                <div class="weather-icon-box">☀️☁️</div>
+                <div class="weather-status-wrap">
+                    <div class="weather-icon sun"></div>
+                    <div class="weather-icon cloud-overlap"></div>
+                </div>
                 <div class="temp-box">
-                    <div class="temp-high"><span class="val">--</span>℃</div>
-                    <div class="temp-low"><span class="val">--</span>℃</div>
+                    <div class="temp-high"><span class="val">--</span><span class="unit">℃</span></div>
+                    <div class="temp-low"><span class="val">--</span><span class="unit">℃</span></div>
                 </div>
             </div>
+        </div>
+
+        <!-- ロゴマーク再現 -->
+        <div class="wn-logo">
+            <span class="wn-blue">wn</span> weather news
         </div>
     </div>
 
