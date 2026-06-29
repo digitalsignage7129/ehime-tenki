@@ -20,6 +20,98 @@
         <div class="timeline-rows" id="timeline-rows"></div>
     </div>
 
-    <script src="app.js" defer></script>
+    <script>
+        // 1. データ定義
+        const weatherDataList = {
+            ehime: {
+                title: "愛媛県",
+                rows: [
+                    { name: "新居浜", low: 20, high: 27, timeline: ["☔", "☔", "☔", "☔", "☔", "☁️", "🌤️", "🌙", "🌙"] },
+                    { name: "今治",   low: 21, high: 28, timeline: ["☔", "☁️", "☔", "☔", "☁️", "🌤️", "🌙", "🌙", "🌙"] },
+                    { name: "松山",   low: 22, high: 28, timeline: ["☁️", "☁️", "☔", "☔", "☁️", "🌤️", "🌙", "🌙", "🌙"] },
+                    { name: "石鎚山", low: 12, high: 18, timeline: ["☔", "☔", "☃️", "☃️", "☔", "☁️", "☁️", "🌙", "🌙"] },
+                    { name: "大洲",   low: 22, high: 28, timeline: ["☔", "☔", "☔", "☔", "☔", "☔", "🌙", "🌙", "🌙"] },
+                    { name: "宇和",   low: 21, high: 27, timeline: ["☔", "☔", "☔", "☔", "☔", "☔", "🌙", "🌙", "🌙"] },
+                    { name: "宇和島", low: 22, high: 28, timeline: ["☔", "☔", "☔", "☔", "☔", "☔", "🌙", "🌙", "🌙"] }
+                ]
+            },
+            japan: {
+                title: "全国の天気",
+                rows: [
+                    { name: "札幌",   low: 15, high: 22, timeline: ["☀️", "☀️", "☀️", "☁️", "☁️", "☔", "☔", "☁️", "🌙"] },
+                    { name: "仙台",   low: 18, high: 25, timeline: ["☁️", "☁️", "☀️", "☀️", "☀️", "☀️", "🌤️", "🌙", "🌙"] },
+                    { name: "東京",   low: 23, high: 31, timeline: ["☀️", "☀️", "☀️", "☀️", "☁️", "☔", "☔", "☁️", "🌙"] },
+                    { name: "名古屋", low: 22, high: 29, timeline: ["☔", "☔", "☁️", "☀️", "☀️", "☀️", "☀️", "🌙", "🌙"] },
+                    { name: "大阪",   low: 24, high: 32, timeline: ["☁️", "☀️", "☀️", "☀️", "☀️", "☔", "☔", "🌙", "🌙"] },
+                    { name: "広島",   low: 21, high: 28, timeline: ["☔", "☔", "☔", "☁️", "☀️", "☀️", "☀️", "🌙", "🌙"] },
+                    { name: "福岡",   low: 22, high: 27, timeline: ["☔", "☔", "☔", "☔", "☁️", "☀️", "☀️", "🌙", "🌙"] }
+                ]
+            }
+        };
+
+        // 2. URL判定
+        function getModeFromURL() {
+            const hash = window.location.hash.replace('#', '').replace(/\/$/, '').trim();
+            if (!hash || !weatherDataList[hash]) {
+                return 'ehime';
+            }
+            return hash;
+        }
+
+        // 3. 画面描画
+        function renderTimeline() {
+            const mode = getModeFromURL();
+            const data = weatherDataList[mode];
+
+            const titleElement = document.getElementById('view-title');
+            if (titleElement) {
+                titleElement.innerText = data.title;
+            }
+
+            const container = document.getElementById('timeline-rows');
+            if (!container) return;
+            
+            container.innerHTML = '';
+
+            data.rows.forEach(city => {
+                const row = document.createElement('div');
+                row.className = 'row';
+
+                let timelineHTML = '';
+                city.timeline.forEach(icon => {
+                    timelineHTML += `<div class="hourly-icon">${icon}</div>`;
+                });
+
+                row.innerHTML = `
+                    <div class="city-name">${city.name}</div>
+                    <div class="temp-zone">
+                        <div class="temp-low">${city.low}</div>
+                        <div class="temp-high">${city.high}</div>
+                    </div>
+                    <div class="weather-forecast-bar">
+                        ${timelineHTML}
+                    </div>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        // 4. リアルタイム自動更新
+        function simulateRealTimeUpdate() {
+            Object.keys(weatherDataList).forEach(mode => {
+                weatherDataList[mode].rows.forEach(city => {
+                    if (Math.random() > 0.8) {
+                        city.high += Math.random() > 0.5 ? 1 : -1;
+                    }
+                });
+            });
+            renderTimeline();
+        }
+
+        // 5. 実行命令
+        renderTimeline();
+        setInterval(simulateRealTimeUpdate, 5000);
+        window.onhashchange = renderTimeline;
+    </script>
 </body>
 </html>
