@@ -110,7 +110,18 @@ body {
     height: 100%;
     padding: 0 20px;
 }
-
+/* 左上の日付表示バッジ */
+.date-display {
+    background-color: #ffffff;
+    color: #1a252f;
+    font-weight: 900;
+    font-size: 1.8rem;
+    padding: 6px 20px;
+    border-radius: 30px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    margin-right: 25px; /* タイトルとの間隔 */
+    white-space: nowrap;
+}
 /* お天気絵文字 */
 .hourly-icon {
     font-size: 2.5rem; /* 絵文字のサイズを大幅にアップ！ */
