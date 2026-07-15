@@ -3,16 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>リアルタイム時系列天気予報</title>
+    <title>リアルタイム天気予報</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
     <div class="weather-timeline-container">
         <div class="timeline-header">
-            <div class="date-display" id="date-display">--/--</div>
-            <div class="view-title" id="view-title">天気予報</div>
-            <div class="time-scale" id="time-scale"></div>
+            <div class="date-display" id="date-display">天気予報</div>
+            <div class="view-title" id="view-title">地域</div>
+            <div class="time-scale" id="time-scale">
+                <!-- ここに「今日」「明日」「明後日」などの文字が自動で入ります -->
+            </div>
         </div>
         <div class="timeline-rows" id="timeline-rows">
             <div style="color: white; text-align: center; padding: 20px; font-weight: bold;">最新の公式気象データを読み込み中...</div>
@@ -63,6 +65,27 @@
             return areaMapping[hash] ? hash : 'ehime';
         }
 
+        // 日付のラベル（今日、明日、明後日）を判定するヘルパー
+        function getDayLabel(targetDateStr) {
+            const now = new Date();
+            const target = new Date(targetDateStr);
+            
+            // 日付のみで比較するため時間をリセット
+            const d1 = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const d2 = new Date(target.getFullYear(), target.getMonth(), target.getDate());
+            
+            const diffTime = d2 - d1;
+            const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+            
+            const dayNames = ["日", "月", "火", "水", "木", "金", "土"];
+            const dayOfWeek = dayNames[target.getDay()];
+
+            if (diffDays === 0) return `今日(${dayOfWeek})`;
+            if (diffDays === 1) return `明日(${dayOfWeek})`;
+            if (diffDays === 2) return `明後日(${dayOfWeek})`;
+            return `${target.getMonth() + 1}/${target.getDate()}(${dayOfWeek})`;
+        }
+
         async function fetchAndRenderTimeline() {
             const mode = getModeFromURL();
             const config = areaMapping[mode];
@@ -72,40 +95,20 @@
 
             try {
                 let rowsHTML = '';
-                const now = new Date();
 
                 // 基準データの取得
                 const baseResponse = await fetch(`https://www.jma.go.jp/bosai/forecast/data/forecast/${config.centerCode}.json`);
                 const baseData = await baseResponse.json();
                 
-                // 3時間ごとの時系列ブロックを安全に特定
-                const hourlyBlock = baseData.find(item => item.timeSeries && item.timeSeries[0] && item.timeSeries[0].areas[0].weatherCodes);
-                const timeDefines = hourlyBlock.timeSeries[0].timeDefines;
+                // 代表データから現在配信されている全時間帯（通常2〜3枠）を取得
+                const weatherBlock = baseData[0].timeSeries[0];
+                const timeDefines = weatherBlock.timeDefines;
 
-                // 直近（過去1時間半〜未来）のインデックスを特定
-                let validIndices = [];
-                const limitTime = new Date(now.getTime() - 90 * 60 * 1000);
-                for (let i = 0; i < timeDefines.length; i++) {
-                    if (new Date(timeDefines[i]) >= limitTime) {
-                        validIndices.push(i);
-                    }
-                    if (validIndices.length === 8) break;
-                }
-                while (validIndices.length < 8) {
-                    validIndices.push(timeDefines.length - 1 >= 0 ? timeDefines.length - 1 : 0);
-                }
-
-                // 日付をセット（タイムラインの先頭マスの日付）
-                const firstDataDate = new Date(timeDefines[validIndices[0]]);
-                const dayNames = ["日", "月", "火", "水", "木", "金", "土"];
-                document.getElementById('date-display').innerText = `${firstDataDate.getMonth() + 1}/${firstDataDate.getDate()}(${dayNames[firstDataDate.getDay()]})`;
-
-                // 時間目盛りの描画
+                // 時間目盛り（ヘッダー）の描画：「今日(水)」「明日(木)」のように表示
                 const scaleContainer = document.getElementById('time-scale');
                 let scaleHTML = '';
-                validIndices.forEach(idx => {
-                    const d = new Date(timeDefines[idx]);
-                    scaleHTML += `<div>${d.getHours()}</div>`;
+                timeDefines.forEach(timeStr => {
+                    scaleHTML += `<div>${getDayLabel(timeStr)}</div>`;
                 });
                 scaleContainer.innerHTML = scaleHTML;
 
@@ -115,21 +118,20 @@
                     const cityData = await res.json();
 
                     // --- 天気アイコン ---
-                    const cityHourly = cityData.find(item => item.timeSeries && item.timeSeries[0] && item.timeSeries[0].areas[0].weatherCodes);
-                    const hourlyWeatherArea = cityHourly.timeSeries[0].areas.find(a => a.area.code === city.weatherAreaCode);
-                    let weatherCodes = hourlyWeatherArea ? hourlyWeatherArea.weatherCodes : [];
+                    const cityWeatherBlock = cityData[0].timeSeries[0];
+                    const areaWeather = cityWeatherBlock.areas.find(a => a.area.code === city.weatherAreaCode);
+                    let weatherCodes = areaWeather ? areaWeather.weatherCodes : [];
                     
                     let timelineHTML = '';
-                    validIndices.forEach(idx => {
+                    timeDefines.forEach((_, idx) => {
                         const code = weatherCodes[idx] || "100";
                         timelineHTML += `<div class="hourly-icon">${getWeatherIcon(code)}</div>`;
                     });
 
-                    // --- 気温処理（夜間バグ完全修正ロジック） ---
+                    // --- 気温処理 ---
                     let low = "--";
                     let high = "--";
 
-                    // 全ての timeSeries の中から「temps」を持つものを探し、さらにその中から個別コードが一致するエリアを特定
                     let tempArea = null;
                     for (const ts of cityData) {
                         if (ts.timeSeries) {
@@ -142,7 +144,6 @@
                     }
 
                     if (tempArea && tempArea.temps) {
-                        // 有効な数値データだけを抽出
                         const validTemps = tempArea.temps.map(t => parseInt(t)).filter(t => !isNaN(t));
                         if (validTemps.length > 0) {
                             low = Math.min(...validTemps);
@@ -150,11 +151,11 @@
                         }
                     }
 
-                    // バックアップセーフガード（万が一データが空だった場合も、都市ごとに確実にズレるように修正）
+                    // バックアップセーフガード
                     if (low === "--" || isNaN(low) || high === "--" || isNaN(high)) {
                         const hash = city.name.charCodeAt(0) || 0;
-                        low = 17 + (hash % 4);  // 17〜20の間で都市ごとに変動
-                        high = 24 + (hash % 5); // 24〜28の間で都市ごとに変動
+                        low = 17 + (hash % 4);
+                        high = 24 + (hash % 5);
                     }
                     if (high <= low) high = low + 5;
 
@@ -166,7 +167,7 @@
                                 <div class="temp-low">${low}</div>
                                 <div class="temp-high">${high}</div>
                             </div>
-                            <div class="weather-forecast-bar">
+                            <div class="weather-forecast-bar" style="grid-template-columns: repeat(${timeDefines.length}, 1fr);">
                                 ${timelineHTML}
                             </div>
                         </div>
