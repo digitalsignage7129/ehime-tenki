@@ -308,32 +308,32 @@
 
         async function loadSignageData() {
             try {
-                // JSONのキャッシュだけを回避して読み込む
+                // JSONファイル自体のキャッシュだけを確実に回避して読み込む
                 const response = await fetch('signage_data.json?t=' + Date.now());
                 const data = await response.json();
 
-                // 1枚目（完全自動・観光）
+                // 1枚目：自動観光情報（内容と完全連動した公式画像）
                 document.getElementById('s0-title').textContent = data.slide0.title;
                 document.getElementById('s0-desc').textContent = data.slide0.desc;
                 document.getElementById('s0-img').src = data.slide0.image;
 
-                // 2枚目（道路）
+                // 2枚目：自動道路情報（道路の状況に応じて画像が変化）
                 document.getElementById('s1-title').textContent = data.slide1.title;
                 document.getElementById('s1-desc').textContent = data.slide1.desc;
                 document.getElementById('s1-img').src = data.slide1.image;
 
-                // 3枚目（自動・天気）
+                // 3枚目：自動天気予報（今日の天気に完全一致した画像）
                 document.getElementById('s2-title').textContent = data.slide2.title;
                 document.getElementById('s2-desc').textContent = data.slide2.desc;
                 document.getElementById('s2-img').src = data.slide2.image;
 
-                // 4枚目（警告）
+                // 4枚目：自動通行規制（平時か警報発表時かで画像が完全変化）
                 document.getElementById('s3-title').textContent = data.slide3.title;
                 document.getElementById('s3-desc').textContent = data.slide3.desc;
                 document.getElementById('s3-img').src = data.slide3.image;
 
             } catch (error) {
-                console.error("データの同期に失敗しました:", error);
+                console.error("サイネージデータのリアルタイム同期に失敗しました:", error);
             }
         }
         function showNextSlide() {
