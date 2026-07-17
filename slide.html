@@ -308,11 +308,11 @@
 
         async function loadSignageData() {
             try {
-                // JSON自体の読み込みキャッシュは回避しつつ、画像URLはそのまま素直に適用する
+                // JSONのキャッシュだけを回避して読み込む
                 const response = await fetch('signage_data.json?t=' + Date.now());
                 const data = await response.json();
 
-                // 1枚目（観光）
+                // 1枚目（完全自動・観光）
                 document.getElementById('s0-title').textContent = data.slide0.title;
                 document.getElementById('s0-desc').textContent = data.slide0.desc;
                 document.getElementById('s0-img').src = data.slide0.image;
@@ -322,7 +322,7 @@
                 document.getElementById('s1-desc').textContent = data.slide1.desc;
                 document.getElementById('s1-img').src = data.slide1.image;
 
-                // 3枚目（天気）
+                // 3枚目（自動・天気）
                 document.getElementById('s2-title').textContent = data.slide2.title;
                 document.getElementById('s2-desc').textContent = data.slide2.desc;
                 document.getElementById('s2-img').src = data.slide2.image;
@@ -336,7 +336,6 @@
                 console.error("データの同期に失敗しました:", error);
             }
         }
-
         function showNextSlide() {
             slides[currentSlideIndex].classList.remove('active');
             currentSlideIndex = (currentSlideIndex + 1) % slides.length;
