@@ -1,22 +1,22 @@
 {
   "slide0": {
     "title": "愛媛の観光スポット情報",
-    "desc": "瀬戸内の美しい海と豊かな自然、歴史ある名湯があなたをお待ちしています。安全運転で素敵な旅をお楽しみください。",
-    "image": "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&w=800&q=80"
+    "desc": "瀬戸内の美しい海と豊かな自然、歴史ある名湯があなたをお待ちしています。安全運転でお楽しみください。",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/df/Mount_Fuji_from_Lake_Kawaguchi_scaled.jpg/640px-Mount_Fuji_from_Lake_Kawaguchi_scaled.jpg"
   },
   "slide1": {
     "title": "松山自動車道・周辺国道の流れ",
-    "desc": "現在、愛媛県内の主要幹線道路において、気象起因の大規模な通行止めや重大な渋滞は報告されておりません。順調に走行可能です。",
-    "image": "https://images.unsplash.com/photo-1542362567-b07eac790abc?auto=format&fit=crop&w=800&q=80"
+    "desc": "現在、愛媛県内の主要幹線道路において、気象起因の大規模な通行止めや重大な渋滞は報告されておりません。スムーズに走行可能です。",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dc/Japanese_Road_Sign_118-A.svg/600px-Japanese_Road_Sign_118-A.svg.png"
   },
   "slide2": {
     "title": "松山地方の天気（最高気温 34℃）",
-    "desc": "現在の予報は「くもり　夜のはじめ頃　晴れ　所により　夜のはじめ頃　まで　雨　で　雷を伴う」です。急な天候変化による路面状況の変化にご注意ください。",
-    "image": "https://images.unsplash.com/photo-1534088568595-a066f410bcda?auto=format&fit=crop&w=800&q=80"
+    "desc": "現在の予報は「くもり　夜のはじめ頃　晴れ　所により　夜のはじめ頃　まで　雨　で　雷を伴う」です。車内の熱中症に十分ご注意の上、安全運転でお進みください。",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/57/Cumulus_clouds_in_fair_weather.jpg/640px-Cumulus_clouds_in_fair_weather.jpg"
   },
   "slide3": {
     "title": "現在、重大な規制情報はありません",
-    "desc": "現時点で愛媛県内全域における緊急の通行通行止め、およびチェーン規制等は発令されていません。全席シートベルトを締め、安全運転でお進みください。",
-    "image": "https://images.unsplash.com/photo-1517524206127-48bbd363f3d7?auto=format&fit=crop&w=800&q=80"
+    "desc": "現時点で愛媛県内全域における緊急の通行止め等は発令されていません。安全第一でお進みください。",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Japanese_Safety_Flag.svg/640px-Japanese_Safety_Flag.svg.png"
   }
 }
