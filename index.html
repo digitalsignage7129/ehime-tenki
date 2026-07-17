@@ -3,236 +3,205 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>リアルタイム時系列天気予報</title>
+    <title>愛媛県内 3時間ごとの天気予報</title>
     <style>
-        /* ダークテーマベースの美しい配色 */
+        /* サイネージ向け：明るく清潔感のある配色（tenkiapi.jp風デザイン） */
         :root {
-            --bg-color: #0f172a;
-            --card-bg: #1e293b;
-            --text-main: #f8fafc;
-            --text-sub: #94a3b8;
-            --accent-blue: #38bdf8;
-            --accent-orange: #fb923c;
-            --border-color: #334155;
+            --bg-color: #f4f6f9;
+            --table-header-bg: #1e88e5; /* 爽やかなブルー */
+            --table-header-text: #ffffff;
+            --cell-bg-even: #ffffff;
+            --cell-bg-odd: #f0f6fc; /* 視認性を上げるための互い違いの極薄ブルー */
+            --text-main: #2c3e50;
+            --text-sub: #5c6b73;
+            --border-color: #cbd5e1;
+            --temp-color: #e65100; /* 遠くからでもパッと目立つ深いオレンジの気温 */
+        }
+
+        * {
+            box-sizing: border-box;
         }
 
         body {
             margin: 0;
-            padding: 20px;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            padding: 1vw; /* 画面端に少しの余白 */
+            font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
             background-color: var(--bg-color);
             color: var(--text-main);
+            overflow: hidden; /* モニターからはみ出し・スクロールバーを防ぐ */
+            height: 100vh;
+            width: 100vw;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
         }
 
-        .weather-timeline-container {
+        /* 全画面を有効活用するコンテナ */
+        .weather-board {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
             width: 100%;
-            max-width: 950px; /* 横幅を十分に確保 */
-            background-color: var(--card-bg);
-            border-radius: 16px;
-            padding: 20px;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid var(--border-color);
+            overflow: hidden;
         }
 
-        /* 3つのエリア（都市名、最低/最高、時間枠）を完璧に整列させるための共通グリッド定義 */
-        .grid-layout {
-            display: grid;
-            grid-template-columns: 120px 80px 1fr; /* 都市名幅 | 最低最高幅 | 8マスの時間軸 */
-            align-items: center;
-        }
-
-        /* ヘッダーエリア */
-        .timeline-header {
-            border-bottom: 2px solid var(--border-color);
-            padding-bottom: 12px;
-            margin-bottom: 8px;
-        }
-
-        .header-title-zone {
+        /* 上部タイトルバー */
+        .board-header {
+            background-color: #ffffff;
+            padding: 1.5vh 2vw;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 12px;
+            border-bottom: 2px solid var(--table-header-bg);
         }
 
-        .view-title {
-            font-size: 1.25rem;
+        .board-title {
+            font-size: 2vw; /* モニターサイズに応じて可変 */
+            font-weight: 900;
+            color: var(--table-header-bg);
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .date-badge {
+            background-color: #e3f2fd;
+            color: var(--table-header-bg);
             font-weight: bold;
+            padding: 0.5vh 1.5vw;
+            border-radius: 30px;
+            font-size: 1.2vw;
         }
 
-        .date-display {
-            background-color: var(--accent-blue);
-            color: #0f172a;
-            font-weight: bold;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-        }
-
-        /* 時間の目盛りヘッダー */
-        .time-scale {
+        /* 縦横比を完全に保ち、ずれないようにするためのテーブル（Grid） */
+        .weather-grid {
             display: grid;
-            grid-template-columns: repeat(8, 1fr); /* 8等分 */
-            text-align: center;
+            grid-template-columns: 14% 10% repeat(8, 1fr); /* 地点(14%) | 日にち/最高最低(10%) | 3時間×8枠(76%) */
+            flex-grow: 1; /* 縦幅いっぱいに広げる */
+            width: 100%;
         }
 
-        .time-scale-item {
-            font-weight: bold;
-            font-size: 0.95rem;
-            color: var(--accent-blue);
-        }
-
-        .time-scale-day {
-            font-size: 0.7rem;
-            color: var(--text-sub);
-            margin-bottom: 2px;
-        }
-
-        /* 各都市のデータ行 */
-        .row {
-            padding: 12px 0;
+        /* 共通セル設定 */
+        .cell {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
             border-bottom: 1px solid var(--border-color);
+            border-right: 1px solid var(--border-color);
+            padding: 1vh 0.5vw;
         }
 
-        .row:last-child {
+        /* 右端のボーダーを消す */
+        .weather-grid > *:nth-child(10n) {
+            border-right: none;
+        }
+
+        /* 最終行のボーダーを消す */
+        .weather-grid > *:nth-last-child(-n+10) {
             border-bottom: none;
         }
 
-        /* ① 都市名 */
-        .city-name {
+        /* ヘッダー行のデザイン（最上部：時間軸） */
+        .header-cell {
+            background-color: var(--table-header-bg);
+            color: var(--table-header-text);
             font-weight: bold;
-            font-size: 1.05rem;
-            padding-right: 8px;
-        }
-
-        /* ② 最低・最高気温の要約 */
-        .temp-zone {
-            display: flex;
-            flex-direction: column;
-            font-size: 0.75rem;
-            font-weight: bold;
-            line-height: 1.3;
-            border-right: 1px solid var(--border-color);
-            padding-right: 8px;
-        }
-        .temp-high { color: #f87171; } /* 赤 */
-        .temp-low { color: #60a5fa; }  /* 青 */
-
-        /* ③ 右側の3時間ごと予報バー */
-        .weather-forecast-bar {
-            display: grid;
-            grid-template-columns: repeat(8, 1fr); /* ヘッダーの時間軸と完全に一致する8等分 */
             text-align: center;
+            border-bottom: 2px solid #0d47a1;
         }
 
-        /* 1時間枠のセル（アイコンと気温を縦並びにして絶対ズレを防ぐ） */
-        .hourly-cell {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 4px;
-        }
-
-        .hourly-icon {
-            font-size: 1.5rem;
-            line-height: 1;
-        }
-
-        /* 気温の数字（大きく、太く、見やすく調整） */
-        .hourly-temp {
-            font-size: 1.05rem;
+        .time-hour {
+            font-size: 1.8vw;
             font-weight: bold;
-            color: var(--accent-orange); /* 視認性の高い暖色に */
         }
 
-        /* ナビゲーション */
-        .nav-links {
-            margin-top: 16px;
-            display: flex;
-            gap: 12px;
-            justify-content: center;
+        .time-day {
+            font-size: 1vw;
+            opacity: 0.9;
+            margin-bottom: 2px;
         }
 
-        .nav-btn {
-            background-color: var(--border-color);
+        /* 各地点名（一番左の列） */
+        .location-cell {
+            font-size: 1.8vw;
+            font-weight: bold;
+            background-color: #f8fafc;
             color: var(--text-main);
-            border: none;
-            padding: 8px 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            text-decoration: none;
-            font-size: 0.85rem;
-            font-weight: bold;
+            border-right: 2px solid var(--table-header-bg);
         }
 
-        .nav-btn:hover {
-            background-color: var(--accent-blue);
-            color: #0f172a;
+        /* 最高最低気温のまとめ */
+        .summary-temp-cell {
+            font-size: 1vw;
+            font-weight: bold;
+            background-color: #fcfcfc;
+            line-height: 1.5;
+        }
+        .sum-high { color: #d32f2f; }
+        .sum-low { color: #1976d2; }
+
+        /* 3時間ごとの予報データセル */
+        .data-cell {
+            background-color: var(--cell-bg-even);
+            transition: background-color 0.2s;
+        }
+
+        /* 互い違いに色をつけて視認性を劇的に向上 */
+        .row-odd {
+            background-color: var(--cell-bg-odd);
+        }
+
+        .weather-icon {
+            font-size: 3vw; /* 液晶モニターでもパッと判別できる大きさ */
+            line-height: 1;
+            margin-bottom: 0.5vh;
+        }
+
+        /* 気温数字（最大化） */
+        .weather-temp {
+            font-size: 1.8vw; /* 気温を大きく、太く */
+            font-weight: 800;
+            color: var(--temp-color);
+        }
+
+        .temp-symbol {
+            font-size: 1.1vw;
+            font-weight: normal;
+            margin-left: 1px;
         }
     </style>
 </head>
 <body>
 
-    <div class="weather-timeline-container">
-        
-        <!-- ヘッダー -->
-        <div class="timeline-header">
-            <div class="header-title-zone">
-                <div class="view-title" id="view-title">天気予報</div>
-                <div class="date-display" id="date-display">--/--</div>
-            </div>
-            
-            <!-- 上部の時間軸（都市行と完全に並びが一致します） -->
-            <div class="grid-layout">
-                <div></div> <!-- 都市名用の空白スペース -->
-                <div></div> <!-- 気温サマリー用の空白スペース -->
-                <div class="time-scale" id="time-scale">
-                    <!-- JavaScriptでここに時間が8個生成されます -->
-                </div>
-            </div>
+    <div class="weather-board">
+        <!-- 画面最上部：タイトル -->
+        <div class="board-header">
+            <h1 class="board-title">🌦️ 愛媛県内 各エリアの天気予報</h1>
+            <div class="date-badge" id="date-badge">--/--</div>
         </div>
 
-        <!-- タイムラインデータ行の表示コンテナ -->
-        <div class="timeline-rows" id="timeline-rows">
-            <div style="color: white; text-align: center; padding: 20px; font-weight: bold;">最新データを読み込み中...</div>
-        </div>
-
-        <!-- 簡易地域切り替えナビ -->
-        <div class="nav-links">
-            <a href="#ehime" class="nav-btn">愛媛県</a>
-            <a href="#japan" class="nav-btn">全国の天気</a>
+        <!-- 天気表示メイングリッド -->
+        <div class="weather-grid" id="weather-grid">
+            <!-- [1行目：ヘッダー（時間軸）] JSで動的に構築されます -->
         </div>
     </div>
 
     <script>
-        const areaMapping = {
-            ehime: {
-                title: "愛媛県",
-                cities: [
-                    { name: "新居浜", lat: 33.9572, lon: 133.2828 },
-                    { name: "今治",   lat: 34.0662, lon: 132.9978 }, 
-                    { name: "松山",   lat: 33.8416, lon: 132.7657 },  
-                    { name: "西条",   lat: 33.9189, lon: 133.1819 }, 
-                    { name: "大洲",   lat: 33.5065, lon: 132.5447 },  
-                    { name: "宇和",   lat: 33.3644, lon: 132.5111 }, 
-                    { name: "宇和島", lat: 33.2234, lon: 132.5605 }   
-                ]
-            },
-            japan: {
-                title: "全国の天気",
-                cities: [
-                    { name: "札幌",   lat: 43.0621, lon: 141.3544 },
-                    { name: "仙台",   lat: 38.2682, lon: 140.8694 },
-                    { name: "東京",   lat: 35.6895, lon: 139.6917 },
-                    { name: "名古屋", lat: 35.1815, lon: 136.9066 },
-                    { name: "大阪",   lat: 34.6937, lon: 135.5022 },
-                    { name: "広島",   lat: 34.3853, lon: 132.4553 },
-                    { name: "福岡",   lat: 33.5904, lon: 130.4017 }
-                ]
-            }
-        };
+        // 表示する愛媛県の地点リスト（PA利用客に関心の高いエリア）
+        const cities = [
+            { name: "四国中央", lat: 33.9833, lon: 133.5464 },
+            { name: "新居浜",   lat: 33.9572, lon: 133.2828 },
+            { name: "今治",     lat: 34.0662, lon: 132.9978 }, 
+            { name: "松山",     lat: 33.8416, lon: 132.7657 },  
+            { name: "大洲",     lat: 33.5065, lon: 132.5447 },  
+            { name: "西予宇和", lat: 33.3644, lon: 132.5111 }, 
+            { name: "宇和島",   lat: 33.2234, lon: 132.5605 }   
+        ];
 
         function getWeatherIcon(wmoCode) {
             if ([0].includes(wmoCode)) return "☀️"; 
@@ -245,23 +214,14 @@
             return "🌤️"; 
         }
 
-        function getModeFromURL() {
-            const hash = window.location.hash.replace('#', '').replace(/\/$/, '').trim();
-            return areaMapping[hash] ? hash : 'ehime';
-        }
-
-        async function fetchAndRenderTimeline() {
-            const mode = getModeFromURL();
-            const config = areaMapping[mode];
-
-            document.getElementById('view-title').innerText = config.title + " (3時間予報)";
-            const container = document.getElementById('timeline-rows');
+        async function fetchAndRenderSignage() {
+            const gridContainer = document.getElementById('weather-grid');
+            gridContainer.innerHTML = ''; // 初期化
 
             try {
-                let rowsHTML = '';
                 const now = new Date();
-
-                // 3時間ごとの時間枠（計8枠 = 24時間分）を正確に計算
+                
+                // 3時間ごとの時間枠（計8枠 = 24時間分）を計算
                 const startHour = Math.floor(now.getHours() / 3) * 3;
                 const baseDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), startHour, 0, 0);
 
@@ -270,27 +230,43 @@
                     displayTimes.push(new Date(baseDate.getTime() + i * 3 * 60 * 60 * 1000));
                 }
 
-                // 日付ヘッダーの更新（開始地点の月日）
+                // 日付ヘッダーの更新
                 const dayNames = ["日", "月", "火", "水", "木", "金", "土"];
-                document.getElementById('date-display').innerText = `${displayTimes[0].getMonth() + 1}/${displayTimes[0].getDate()}(${dayNames[displayTimes[0].getDay()]})`;
+                document.getElementById('date-badge').innerText = `本日：${displayTimes[0].getMonth() + 1}/${displayTimes[0].getDate()}日 (${dayNames[displayTimes[0].getDay()]})`;
 
-                // 上部時間軸のHTML生成（何日かのラベルも添えて絶対にズレないように並べる）
-                const scaleContainer = document.getElementById('time-scale');
-                let scaleHTML = '';
+                // --- 1. グリッドのヘッダー部分（1行目）を組み立て ---
+                // A. 左端の余白スペース（2マス分）
+                const emptyCell1 = document.createElement('div');
+                emptyCell1.className = 'cell header-cell';
+                emptyCell1.style.backgroundColor = '#1565c0'; // より濃い青で引き締め
+                emptyCell1.innerText = '観測地点';
+                gridContainer.appendChild(emptyCell1);
+
+                const emptyCell2 = document.createElement('div');
+                emptyCell2.className = 'cell header-cell';
+                emptyCell2.style.backgroundColor = '#1565c0';
+                emptyCell2.innerText = '気温予想';
+                gridContainer.appendChild(emptyCell2);
+
+                // B. 時間のヘッダー（8枠分）
                 displayTimes.forEach(t => {
                     const isNextDay = t.getDate() !== now.getDate();
                     const dayLabel = isNextDay ? "明日" : "今日";
-                    scaleHTML += `
-                        <div class="time-scale-item">
-                            <div class="time-scale-day">${dayLabel}</div>
-                            <div>${t.getHours()}時</div>
-                        </div>
+                    
+                    const timeCell = document.createElement('div');
+                    timeCell.className = 'cell header-cell';
+                    timeCell.innerHTML = `
+                        <div class="time-day">${dayLabel}</div>
+                        <div class="time-hour">${t.getHours()}:00</div>
                     `;
+                    gridContainer.appendChild(timeCell);
                 });
-                scaleContainer.innerHTML = scaleHTML;
 
-                // 各都市ごとの処理
-                for (const city of config.cities) {
+                // --- 2. 各都市のデータ行を組み立て ---
+                for (let rIndex = 0; rIndex < cities.length; rIndex++) {
+                    const city = cities[rIndex];
+                    const rowBgClass = (rIndex % 2 === 1) ? 'row-odd' : ''; // 行ごとに背景を微調整して重なりをわかりやすく
+
                     const response = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${city.lat}&longitude=${city.lon}&hourly=temperature_2m,weather_code&timezone=Asia%2FTokyo`);
                     const data = await response.json();
 
@@ -298,9 +274,10 @@
                     const temperatures = data.hourly.temperature_2m;
                     const weatherCodes = data.hourly.weather_code;
 
-                    let timelineHTML = '';
                     let matchedTemps = [];
+                    let cellsHTML = '';
 
+                    // 8つの時間枠に一致するお天気データを抽出してセル（HTML）を生成
                     displayTimes.forEach(targetTime => {
                         const year = targetTime.getFullYear();
                         const month = String(targetTime.getMonth() + 1).padStart(2, '0');
@@ -312,55 +289,63 @@
                         if (idx !== -1) {
                             const tempVal = Math.round(temperatures[idx]);
                             const codeVal = weatherCodes[idx];
-                            
-                            // アイコンと気温を縦に組み合わせた1つのセルを生成
-                            timelineHTML += `
-                                <div class="hourly-cell">
-                                    <div class="hourly-icon">${getWeatherIcon(codeVal)}</div>
-                                    <div class="hourly-temp">${tempVal}°</div>
+                            matchedTemps.push(tempVal);
+
+                            cellsHTML += `
+                                <div class="cell data-cell ${rowBgClass}">
+                                    <div class="weather-icon">${getWeatherIcon(codeVal)}</div>
+                                    <div class="weather-temp">${tempVal}<span class="temp-symbol">°C</span></div>
                                 </div>
                             `;
-                            matchedTemps.push(tempVal);
                         } else {
-                            timelineHTML += `
-                                <div class="hourly-cell">
-                                    <div class="hourly-icon">🌤️</div>
-                                    <div class="hourly-temp">--°</div>
+                            cellsHTML += `
+                                <div class="cell data-cell ${rowBgClass}">
+                                    <div class="weather-icon">🌤️</div>
+                                    <div class="weather-temp">--<span class="temp-symbol">°C</span></div>
                                 </div>
                             `;
                         }
                     });
 
-                    // 24時間内での最低・最高気温
-                    const low = matchedTemps.length > 0 ? Math.min(...matchedTemps) : "--";
-                    const high = matchedTemps.length > 0 ? Math.max(...matchedTemps) : "--";
+                    const high = matchedTemps.length > 0 ? Math.min(...matchedTemps) : "--";
+                    const low = matchedTemps.length > 0 ? Math.max(...matchedTemps) : "--";
 
-                    // 行の組み立て（ヘッダーと寸分違わず配置が揃う grid-layout 構造）
-                    rowsHTML += `
-                        <div class="row grid-layout">
-                            <div class="city-name">${city.name}</div>
-                            <div class="temp-zone">
-                                <span class="temp-high">最高 ${high}°</span>
-                                <span class="temp-low">最低 ${low}°</span>
-                            </div>
-                            <div class="weather-forecast-bar">
-                                ${timelineHTML}
-                            </div>
-                        </div>
+                    // A. 地点名セル
+                    const locCell = document.createElement('div');
+                    locCell.className = `cell location-cell ${rowBgClass}`;
+                    locCell.innerText = city.name;
+                    gridContainer.appendChild(locCell);
+
+                    // B. 最高・最低気温サマリーセル
+                    const sumCell = document.createElement('div');
+                    sumCell.className = `cell summary-temp-cell ${rowBgClass}`;
+                    sumCell.innerHTML = `
+                        <div class="sum-high">最高 ${low}°C</div>
+                        <div class="sum-low">最低 ${high}°C</div>
                     `;
+                    gridContainer.appendChild(sumCell);
+
+                    // C. 3時間ごとの時間別お天気セル（8つ分）
+                    const tempWrapper = document.createElement('div');
+                    tempWrapper.innerHTML = cellsHTML;
+                    while (tempWrapper.firstChild) {
+                        gridContainer.appendChild(tempWrapper.firstChild);
+                    }
                 }
 
-                container.innerHTML = rowsHTML;
-
             } catch (error) {
-                console.error("Open-Meteo取得エラー:", error);
-                container.innerHTML = `<div style="color: white; text-align: center; padding: 20px;">お天気データの読み込みに失敗しました。</div>`;
+                console.error("データ取得エラー:", error);
+                gridContainer.innerHTML = `<div style="grid-column: span 10; text-align: center; font-size: 2vw; padding: 50px; color: var(--text-sub);">
+                    お天気情報を取得できませんでした。自動で再試行します。
+                </div>`;
             }
         }
 
-        fetchAndRenderTimeline();
-        setInterval(fetchAndRenderTimeline, 600000);
-        window.onhashchange = fetchAndRenderTimeline;
+        // 初期ロード
+        fetchAndRenderSignage();
+
+        // モニター設置向け：10分(600000ms)ごとに自動で画面情報を静かにサイレントリロード
+        setInterval(fetchAndRenderSignage, 600000);
     </script>
 </body>
 </html>
