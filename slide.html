@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>自動取得 道路・気象・観光サイネージ（ライトモード）</title>
+    <style>
+        :root {
+            --bg-color: #f8fafc;       /* 明るく清潔感のあるライトグレー */
+            --card-bg: #ffffff;        /* カード背景は純白 */
+            --text-main: #0f172a;      /* 文字は視認性の高い極濃グレー */
+            --text-sub: #475569;       /* 補足文字 */
+            --border-color: #cbd5e1;   /* 境界線 */
+            --primary-blue: #1e88e5;   /* 道路情報用の爽やかなブルー */
+            --accent-orange: #ea580c;  /* 観光・熱中症用の明るいオレンジ */
+            --alert-red: #dc2626;      /* 規制・警報用のハッキリしたレッド */
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 2vw;
+            font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .slide-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            background-color: var(--card-bg);
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+        }
+
+        /* ちらつき（緑画面など）防止フェード制御 */
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            padding: 4vh 4vw;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 1s ease-in-out, visibility 1s ease-in-out;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .slide.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* ヘッダー */
+        .slide-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 5px solid var(--primary-blue);
+            padding-bottom: 1.5vh;
+            height: 12vh;
+        }
+
+        .orange-theme { border-bottom-color: var(--accent-orange); }
+        .red-theme { border-bottom-color: var(--alert-red); }
+
+        .slide-title {
+            font-size: 3.2vw;
+            font-weight: 900;
+            margin: 0;
+        }
+
+        .slide-badge {
+            background-color: #e0f2fe;
+            color: #0369a1;
+            font-weight: bold;
+            padding: 0.8vh 2vw;
+            border-radius: 30px;
+            font-size: 1.5vw;
+        }
+
+        .orange-theme .slide-badge { background-color: #ffedd5; color: #c2410c; }
+        .red-theme .slide-badge { background-color: #fee2e2; color: #991b1b; }
+
+        /* コンテンツ */
+        .slide-body {
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            height: 64vh;
+        }
+
+        .content-split {
+            display: flex;
+            width: 100%;
+            height: 100%;
+            gap: 3vw;
+            align-items: center;
+        }
+
+        .content-left {
+            flex: 7;
+            display: flex;
+            flex-direction: column;
+            gap: 2vh;
+        }
+
+        .content-right {
+            flex: 3;
+            background-color: #f1f5f9;
+            border-radius: 12px;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 10vw;
+            border: 1px solid var(--border-color);
+        }
+
+        .accent-box {
+            border-left: 8px solid var(--primary-blue);
+            padding-left: 1.5vw;
+        }
+
+        .orange-theme .accent-box { border-left-color: var(--accent-orange); }
+        .red-theme .accent-box { border-left-color: var(--alert-red); }
+
+        .main-message {
+            font-size: 3.5vw;
+            font-weight: 800;
+            line-height: 1.3;
+            color: var(--text-main);
+        }
+
+        .sub-description {
+            font-size: 1.8vw;
+            line-height: 1.6;
+            color: var(--text-sub);
+        }
+
+        /* フッター */
+        .slide-footer {
+            height: 8vh;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid var(--border-color);
+            padding-top: 1vh;
+            font-size: 1.3vw;
+            color: var(--text-sub);
+        }
+
+        .nav-dots { display: flex; gap: 0.8vw; }
+        .dot {
+            width: 1.2vw;
+            height: 1.2vw;
+            border-radius: 50%;
+            background-color: #cbd5e1;
+        }
+        .dot.active { background-color: var(--primary-blue); }
+        .orange-theme-dot.active { background-color: var(--accent-orange); }
+        .red-theme-dot.active { background-color: var(--alert-red); }
+    </style>
+</head>
+<body>
+
+    <div class="slide-container">
+
+        <!-- 1枚目：観光情報（オープンデータ自動連携用） -->
+        <div class="slide active orange-theme" id="slide-0">
+            <div class="slide-header orange-theme">
+                <h1 class="slide-title">🍊 愛媛県 観光案内</h1>
+                <div class="slide-badge">観光オープンデータ連携</div>
+            </div>
+            <div class="slide-body">
+                <div class="content-split">
+                    <div class="content-left">
+                        <div class="accent-box">
+                            <div class="main-message" id="tour-title">しまなみ海道と瀬戸内海の絶景</div>
+                        </div>
+                        <div class="sub-description" id="tour-desc">
+                            世界に誇るサイクリングルート。今治から尾道へ続く橋の上からは、島々の豊かな自然と、太陽に照らされた美しい青い海が一望できます。
+                        </div>
+                    </div>
+                    <div class="content-right" style="background-color: #fff7ed; border-color: #fed7aa;" id="tour-icon">🚲</div>
+                </div>
+            </div>
+            <div class="slide-footer">
+                <div>データソース：愛媛県観光オープンデータ</div>
+                <div class="nav-dots">
+                    <div class="dot active orange-theme-dot"></div>
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2枚目：道路状況（JARTICデータ自動連携用） -->
+        <div class="slide" id="slide-1">
+            <div class="slide-header">
+                <h1 class="slide-title">🚗 リアルタイム道路状況</h1>
+                <div class="slide-badge">JARTIC交通データ</div>
+            </div>
+            <div class="slide-body">
+                <div class="content-split">
+                    <div class="content-left">
+                        <div class="accent-box">
+                            <div class="main-message" id="traffic-title">松山自動車道・周辺国道の流れ</div>
+                        </div>
+                        <div class="sub-description" id="traffic-desc">
+                            現在、周辺の主要道路において重大な事故や渋滞情報は検知されていません。この先も速度を控えめに、安全運転でお進みください。
+                        </div>
+                    </div>
+                    <div class="content-right" style="background-color: #f0f9ff; border-color: #bae6fd;">🛣️</div>
+                </div>
+            </div>
+            <div class="slide-footer">
+                <div>データソース：JARTIC道路交通量API</div>
+                <div class="nav-dots">
+                    <div class="dot"></div>
+                    <div class="dot active"></div>
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3枚目：ピンポイント天気予報 -->
+        <div class="slide orange-theme" id="slide-2">
+            <div class="slide-header orange-theme">
+                <h1 class="slide-title">🌤️ ピンポイント天気予報</h1>
+                <div class="slide-badge">気象庁・環境省WBGT</div>
+            </div>
+            <div class="slide-body">
+                <div class="content-split">
+                    <div class="content-left">
+                        <div class="accent-box">
+                            <div class="main-message" id="weather-title">本日これからの空模様</div>
+                        </div>
+                        <div class="sub-description" id="weather-desc">
+                            これからの予想最高気温は28℃、降水確率は10％。風速は4.0m/sと、お出かけやドライブに適した穏やかなウェザーコンディションです。
+                        </div>
+                    </div>
+                    <div class="content-right" style="background-color: #fffbeb; border-color: #fef3c7;">☀️</div>
+                </div>
+            </div>
+            <div class="slide-footer">
+                <div>データソース：気象庁防災XML / 環境省</div>
+                <div class="nav-dots">
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                    <div class="dot active orange-theme-dot"></div>
+                    <div class="dot"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4枚目：規制・災害警報アラート -->
+        <div class="slide red-theme" id="slide-3">
+            <div class="slide-header red-theme">
+                <h1 class="slide-title">🚨 広域防災・通行規制アラート</h1>
+                <div class="slide-badge">国土交通省 災害規制情報</div>
+            </div>
+            <div class="slide-body">
+                <div class="content-split">
+                    <div class="content-left">
+                        <div class="accent-box">
+                            <div class="main-message" id="alert-title">現在、重大な規制情報はありません</div>
+                        </div>
+                        <div class="sub-description" id="alert-desc">
+                            愛媛県および瀬戸内沿岸部における緊急通行止めや通行規制、気象等による特別警報は発令されていません。安心してお進みください。
+                        </div>
+                    </div>
+                    <div class="content-right" style="background-color: #fef2f2; border-color: #fca5a5;">⚠️</div>
+                </div>
+            </div>
+            <div class="slide-footer">
+                <div>データソース：国交省 災害情報オープンデータ</div>
+                <div class="nav-dots">
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                    <div class="dot active red-theme-dot"></div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const slides = document.querySelectorAll('.slide');
+        let currentSlideIndex = 0;
+        const slideIntervalTime = 10000; // 10秒ごとに自動切り替え
+
+        function showNextSlide() {
+            slides[currentSlideIndex].classList.remove('active');
+            currentSlideIndex = (currentSlideIndex + 1) % slides.length;
+            slides[currentSlideIndex].classList.add('active');
+        }
+
+        setInterval(showNextSlide, slideIntervalTime);
+    </script>
+</body>
+</html>
