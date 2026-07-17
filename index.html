@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>愛媛県内 3時間ごとの天気予報</title>
+    <title>3時間ごとの天気予報 サイネージ</title>
     <style>
         /* サイネージ向け：明るく清潔感のある配色（tenkiapi.jp風デザイン） */
         :root {
@@ -51,7 +51,8 @@
         /* 上部タイトルバー */
         .board-header {
             background-color: #ffffff;
-            padding: 1.5vh 2vw;
+            padding: 1vh 2vw;
+            height: 8vh; /* ヘッダーの高さを固定 */
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -80,8 +81,8 @@
         /* 縦横比を完全に保ち、ずれないようにするためのテーブル（Grid） */
         .weather-grid {
             display: grid;
-            grid-template-columns: 14% 10% repeat(8, 1fr); /* 地点(14%) | 日にち/最高最低(10%) | 3時間×8枠(76%) */
-            flex-grow: 1; /* 縦幅いっぱいに広げる */
+            grid-template-columns: 14% 12% repeat(8, 1fr); /* 地点 | 24時間以内の気温予想 | 3時間×8枠 */
+            height: 90vh; /* 残りの高さを割り当てて、見切れを絶対に防ぐ */
             width: 100%;
         }
 
@@ -93,7 +94,7 @@
             align-items: center;
             border-bottom: 1px solid var(--border-color);
             border-right: 1px solid var(--border-color);
-            padding: 1vh 0.5vw;
+            padding: 0.5vh 0.2vw;
         }
 
         /* 右端のボーダーを消す */
@@ -135,12 +136,13 @@
             border-right: 2px solid var(--table-header-bg);
         }
 
-        /* 最高最低気温のまとめ */
+        /* 「24時間以内の気温予想」のまとめセル */
         .summary-temp-cell {
-            font-size: 1vw;
+            font-size: 0.9vw;
             font-weight: bold;
             background-color: #fcfcfc;
-            line-height: 1.5;
+            line-height: 1.6;
+            text-align: center;
         }
         .sum-high { color: #d32f2f; }
         .sum-low { color: #1976d2; }
@@ -181,7 +183,7 @@
     <div class="weather-board">
         <!-- 画面最上部：タイトル -->
         <div class="board-header">
-            <h1 class="board-title">🌦️ 愛媛県内 各エリアの天気予報</h1>
+            <h1 class="board-title" id="board-title">🌦️ 愛媛県内 各エリアの天気予報</h1>
             <div class="date-badge" id="date-badge">--/--</div>
         </div>
 
@@ -192,16 +194,33 @@
     </div>
 
     <script>
-        // 表示する愛媛県の地点リスト（PA利用客に関心の高いエリア）
-        const cities = [
-            { name: "四国中央", lat: 33.9833, lon: 133.5464 },
-            { name: "新居浜",   lat: 33.9572, lon: 133.2828 },
-            { name: "今治",     lat: 34.0662, lon: 132.9978 }, 
-            { name: "松山",     lat: 33.8416, lon: 132.7657 },  
-            { name: "大洲",     lat: 33.5065, lon: 132.5447 },  
-            { name: "西予宇和", lat: 33.3644, lon: 132.5111 }, 
-            { name: "宇和島",   lat: 33.2234, lon: 132.5605 }   
-        ];
+        // 地域・都市マッピング
+        const areaMapping = {
+            ehime: {
+                title: "🌦️ 愛媛県内 各エリアの天気予報",
+                cities: [
+                    { name: "四国中央", lat: 33.9833, lon: 133.5464 },
+                    { name: "新居浜",   lat: 33.9572, lon: 133.2828 },
+                    { name: "今治",     lat: 34.0662, lon: 132.9978 }, 
+                    { name: "松山",     lat: 33.8416, lon: 132.7657 },  
+                    { name: "大洲",     lat: 33.5065, lon: 132.5447 },  
+                    { name: "西予宇和", lat: 33.3644, lon: 132.5111 }, 
+                    { name: "宇和島",   lat: 33.2234, lon: 132.5605 }   
+                ]
+            },
+            japan: {
+                title: "🗺️ 全国の天気予報",
+                cities: [
+                    { name: "札幌",   lat: 43.0621, lon: 141.3544 },
+                    { name: "仙台",   lat: 38.2682, lon: 140.8694 },
+                    { name: "東京",   lat: 35.6895, lon: 139.6917 },
+                    { name: "名古屋", lat: 35.1815, lon: 136.9066 },
+                    { name: "大阪",   lat: 34.6937, lon: 135.5022 },
+                    { name: "広島",   lat: 34.3853, lon: 132.4553 },
+                    { name: "福岡",   lat: 33.5904, lon: 130.4017 }
+                ]
+            }
+        };
 
         function getWeatherIcon(wmoCode) {
             if ([0].includes(wmoCode)) return "☀️"; 
@@ -214,7 +233,19 @@
             return "🌤️"; 
         }
 
+        // URLハッシュ（#ehime や #japan）を取得する処理
+        function getModeFromURL() {
+            const hash = window.location.hash.replace('#', '').replace(/\/$/, '').trim();
+            return areaMapping[hash] ? hash : 'ehime';
+        }
+
         async function fetchAndRenderSignage() {
+            const mode = getModeFromURL();
+            const config = areaMapping[mode];
+
+            // ヘッダータイトルの更新
+            document.getElementById('board-title').innerText = config.title;
+
             const gridContainer = document.getElementById('weather-grid');
             gridContainer.innerHTML = ''; // 初期化
 
@@ -235,20 +266,21 @@
                 document.getElementById('date-badge').innerText = `本日：${displayTimes[0].getMonth() + 1}/${displayTimes[0].getDate()}日 (${dayNames[displayTimes[0].getDay()]})`;
 
                 // --- 1. グリッドのヘッダー部分（1行目）を組み立て ---
-                // A. 左端の余白スペース（2マス分）
+                // A. 左端の観測地点
                 const emptyCell1 = document.createElement('div');
                 emptyCell1.className = 'cell header-cell';
                 emptyCell1.style.backgroundColor = '#1565c0'; // より濃い青で引き締め
                 emptyCell1.innerText = '観測地点';
                 gridContainer.appendChild(emptyCell1);
 
+                // B. ご指定の「24時間以内の気温予想」ヘッダーに変更
                 const emptyCell2 = document.createElement('div');
                 emptyCell2.className = 'cell header-cell';
                 emptyCell2.style.backgroundColor = '#1565c0';
-                emptyCell2.innerText = '気温予想';
+                emptyCell2.innerHTML = '<div style="font-size:0.9vw; line-height:1.2;">24時間以内の<br>気温予想</div>';
                 gridContainer.appendChild(emptyCell2);
 
-                // B. 時間のヘッダー（8枠分）
+                // C. 時間のヘッダー（8枠分）
                 displayTimes.forEach(t => {
                     const isNextDay = t.getDate() !== now.getDate();
                     const dayLabel = isNextDay ? "明日" : "今日";
@@ -263,8 +295,8 @@
                 });
 
                 // --- 2. 各都市のデータ行を組み立て ---
-                for (let rIndex = 0; rIndex < cities.length; rIndex++) {
-                    const city = cities[rIndex];
+                for (let rIndex = 0; rIndex < config.cities.length; rIndex++) {
+                    const city = config.cities[rIndex];
                     const rowBgClass = (rIndex % 2 === 1) ? 'row-odd' : ''; // 行ごとに背景を微調整して重なりをわかりやすく
 
                     const response = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${city.lat}&longitude=${city.lon}&hourly=temperature_2m,weather_code&timezone=Asia%2FTokyo`);
@@ -307,8 +339,9 @@
                         }
                     });
 
-                    const high = matchedTemps.length > 0 ? Math.min(...matchedTemps) : "--";
-                    const low = matchedTemps.length > 0 ? Math.max(...matchedTemps) : "--";
+                    // 24時間内の実際の最低・最高を算出
+                    const low = matchedTemps.length > 0 ? Math.min(...matchedTemps) : "--";
+                    const high = matchedTemps.length > 0 ? Math.max(...matchedTemps) : "--";
 
                     // A. 地点名セル
                     const locCell = document.createElement('div');
@@ -320,8 +353,8 @@
                     const sumCell = document.createElement('div');
                     sumCell.className = `cell summary-temp-cell ${rowBgClass}`;
                     sumCell.innerHTML = `
-                        <div class="sum-high">最高 ${low}°C</div>
-                        <div class="sum-low">最低 ${high}°C</div>
+                        <div class="sum-high">最高 ${high}°C</div>
+                        <div class="sum-low">最低 ${low}°C</div>
                     `;
                     gridContainer.appendChild(sumCell);
 
@@ -344,8 +377,11 @@
         // 初期ロード
         fetchAndRenderSignage();
 
-        // モニター設置向け：10分(600000ms)ごとに自動で画面情報を静かにサイレントリロード
+        // 10分(600000ms)ごとに自動で画面情報をサイレントリロード
         setInterval(fetchAndRenderSignage, 600000);
+
+        // URLのハッシュが変わった場合（#japanなど）に自動で即座に切り替える
+        window.onhashchange = fetchAndRenderSignage;
     </script>
 </body>
 </html>
