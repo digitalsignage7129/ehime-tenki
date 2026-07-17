@@ -3,22 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>自動取得 道路・気象・観光サイネージ（ライトモード）</title>
+    <title>【完全自動同期・画像対応】道路・気象・観光サイネージ</title>
     <style>
         :root {
-            --bg-color: #f8fafc;       /* 明るく清潔感のあるライトグレー */
-            --card-bg: #ffffff;        /* カード背景は純白 */
-            --text-main: #0f172a;      /* 文字は視認性の高い極濃グレー */
-            --text-sub: #475569;       /* 補足文字 */
-            --border-color: #cbd5e1;   /* 境界線 */
-            --primary-blue: #1e88e5;   /* 道路情報用の爽やかなブルー */
-            --accent-orange: #ea580c;  /* 観光・熱中症用の明るいオレンジ */
-            --alert-red: #dc2626;      /* 規制・警報用のハッキリしたレッド */
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-sub: #475569;
+            --border-color: #cbd5e1;
+            --primary-blue: #1e88e5;
+            --accent-orange: #ea580c;
+            --alert-red: #dc2626;
         }
 
-        * {
-            box-sizing: border-box;
-        }
+        * { box-sizing: border-box; }
 
         body {
             margin: 0;
@@ -45,7 +43,6 @@
             overflow: hidden;
         }
 
-        /* ちらつき（緑画面など）防止フェード制御 */
         .slide {
             position: absolute;
             top: 0;
@@ -66,7 +63,6 @@
             visibility: visible;
         }
 
-        /* ヘッダー */
         .slide-header {
             display: flex;
             justify-content: space-between;
@@ -97,7 +93,6 @@
         .orange-theme .slide-badge { background-color: #ffedd5; color: #c2410c; }
         .red-theme .slide-badge { background-color: #fee2e2; color: #991b1b; }
 
-        /* コンテンツ */
         .slide-body {
             flex-grow: 1;
             display: flex;
@@ -114,22 +109,29 @@
         }
 
         .content-left {
-            flex: 7;
+            flex: 6;
             display: flex;
             flex-direction: column;
             gap: 2vh;
         }
 
         .content-right {
-            flex: 3;
-            background-color: #f1f5f9;
+            flex: 4;
             border-radius: 12px;
             height: 100%;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 10vw;
-            border: 1px solid var(--border-color);
+            background-color: #f1f5f9;
+        }
+
+        /* 📸 画像をきれいにフィットさせる */
+        .content-right img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
 
         .accent-box {
@@ -141,7 +143,7 @@
         .red-theme .accent-box { border-left-color: var(--alert-red); }
 
         .main-message {
-            font-size: 3.5vw;
+            font-size: 3.3vw;
             font-weight: 800;
             line-height: 1.3;
             color: var(--text-main);
@@ -153,7 +155,6 @@
             color: var(--text-sub);
         }
 
-        /* フッター */
         .slide-footer {
             height: 8vh;
             display: flex;
@@ -181,23 +182,23 @@
 
     <div class="slide-container">
 
-        <!-- 1枚目：観光情報（オープンデータ自動連携用） -->
+        <!-- 1枚目：観光 -->
         <div class="slide active orange-theme" id="slide-0">
             <div class="slide-header orange-theme">
                 <h1 class="slide-title">🍊 愛媛県 観光案内</h1>
-                <div class="slide-badge">観光オープンデータ連携</div>
+                <div class="slide-badge">最新観光データ</div>
             </div>
             <div class="slide-body">
                 <div class="content-split">
                     <div class="content-left">
                         <div class="accent-box">
-                            <div class="main-message" id="tour-title">しまなみ海道と瀬戸内海の絶景</div>
+                            <div class="main-message" id="s0-title">読込中...</div>
                         </div>
-                        <div class="sub-description" id="tour-desc">
-                            世界に誇るサイクリングルート。今治から尾道へ続く橋の上からは、島々の豊かな自然と、太陽に照らされた美しい青い海が一望できます。
-                        </div>
+                        <div class="sub-description" id="s0-desc">データを取得しています。</div>
                     </div>
-                    <div class="content-right" style="background-color: #fff7ed; border-color: #fed7aa;" id="tour-icon">🚲</div>
+                    <div class="content-right">
+                        <img id="s0-img" src="" alt="観光写真" onerror="this.src='https://images.unsplash.com/photo-1542640244-7e672d6cef21?w=800'">
+                    </div>
                 </div>
             </div>
             <div class="slide-footer">
@@ -211,7 +212,7 @@
             </div>
         </div>
 
-        <!-- 2枚目：道路状況（JARTICデータ自動連携用） -->
+        <!-- 2枚目：道路 -->
         <div class="slide" id="slide-1">
             <div class="slide-header">
                 <h1 class="slide-title">🚗 リアルタイム道路状況</h1>
@@ -221,13 +222,13 @@
                 <div class="content-split">
                     <div class="content-left">
                         <div class="accent-box">
-                            <div class="main-message" id="traffic-title">松山自動車道・周辺国道の流れ</div>
+                            <div class="main-message" id="s1-title">読込中...</div>
                         </div>
-                        <div class="sub-description" id="traffic-desc">
-                            現在、周辺の主要道路において重大な事故や渋滞情報は検知されていません。この先も速度を控えめに、安全運転でお進みください。
-                        </div>
+                        <div class="sub-description" id="s1-desc">データを取得しています。</div>
                     </div>
-                    <div class="content-right" style="background-color: #f0f9ff; border-color: #bae6fd;">🛣️</div>
+                    <div class="content-right">
+                        <img id="s1-img" src="" alt="道路情報イメージ">
+                    </div>
                 </div>
             </div>
             <div class="slide-footer">
@@ -241,7 +242,7 @@
             </div>
         </div>
 
-        <!-- 3枚目：ピンポイント天気予報 -->
+        <!-- 3枚目：天気 -->
         <div class="slide orange-theme" id="slide-2">
             <div class="slide-header orange-theme">
                 <h1 class="slide-title">🌤️ ピンポイント天気予報</h1>
@@ -251,13 +252,14 @@
                 <div class="content-split">
                     <div class="content-left">
                         <div class="accent-box">
-                            <div class="main-message" id="weather-title">本日これからの空模様</div>
+                            <div class="main-message" id="s2-title">読込中...</div>
                         </div>
-                        <div class="sub-description" id="weather-desc">
-                            これからの予想最高気温は28℃、降水確率は10％。風速は4.0m/sと、お出かけやドライブに適した穏やかなウェザーコンディションです。
-                        </div>
+                        <div class="sub-description" id="s2-desc">データを取得しています。</div>
                     </div>
-                    <div class="content-right" style="background-color: #fffbeb; border-color: #fef3c7;">☀️</div>
+                    <!-- 天気はイラスト（透過PNGなど）を大きく表示するため特別処理にしてもOK -->
+                    <div class="content-right" style="background-color: #f1f5f9; padding: 20px;">
+                        <img id="s2-img" src="" alt="天気マーク" style="object-fit: contain; width: 70%; height: 70%;">
+                    </div>
                 </div>
             </div>
             <div class="slide-footer">
@@ -271,7 +273,7 @@
             </div>
         </div>
 
-        <!-- 4枚目：規制・災害警報アラート -->
+        <!-- 4枚目：警告 -->
         <div class="slide red-theme" id="slide-3">
             <div class="slide-header red-theme">
                 <h1 class="slide-title">🚨 広域防災・通行規制アラート</h1>
@@ -281,13 +283,13 @@
                 <div class="content-split">
                     <div class="content-left">
                         <div class="accent-box">
-                            <div class="main-message" id="alert-title">現在、重大な規制情報はありません</div>
+                            <div class="main-message" id="s3-title">読込中...</div>
                         </div>
-                        <div class="sub-description" id="alert-desc">
-                            愛媛県および瀬戸内沿岸部における緊急通行止めや通行規制、気象等による特別警報は発令されていません。安心してお進みください。
-                        </div>
+                        <div class="sub-description" id="s3-desc">データを取得しています。</div>
                     </div>
-                    <div class="content-right" style="background-color: #fef2f2; border-color: #fca5a5;">⚠️</div>
+                    <div class="content-right">
+                        <img id="s3-img" src="" alt="警告イメージ">
+                    </div>
                 </div>
             </div>
             <div class="slide-footer">
@@ -306,14 +308,54 @@
     <script>
         const slides = document.querySelectorAll('.slide');
         let currentSlideIndex = 0;
-        const slideIntervalTime = 10000; // 10秒ごとに自動切り替え
+        const slideIntervalTime = 10000; // 10秒切り替え
 
+        // 🔄 JSONからデータを読み込んで画面にセットする関数
+        async function loadSignageData() {
+            try {
+                // キャッシュ回避のためタイムスタンプを付与してJSONをロード
+                const response = await fetch('signage_data.json?t=' + Date.now());
+                const data = await response.json();
+
+                // 1枚目（観光）
+                document.getElementById('s0-title').textContent = data.slide0.title;
+                document.getElementById('s0-desc').textContent = data.slide0.desc;
+                document.getElementById('s0-img').src = data.slide0.image;
+
+                // 2枚目（道路）
+                document.getElementById('s1-title').textContent = data.slide1.title;
+                document.getElementById('s1-desc').textContent = data.slide1.desc;
+                document.getElementById('s1-img').src = data.slide1.image;
+
+                // 3枚目（天気）
+                document.getElementById('s2-title').textContent = data.slide2.title;
+                document.getElementById('s2-desc').textContent = data.slide2.desc;
+                document.getElementById('s2-img').src = data.slide2.image;
+
+                // 4枚目（警告）
+                document.getElementById('s3-title').textContent = data.slide3.title;
+                document.getElementById('s3-desc').textContent = data.slide3.desc;
+                document.getElementById('s3-img').src = data.slide3.image;
+
+            } catch (error) {
+                console.error("データの取得に失敗しました:", error);
+            }
+        }
+
+        // スライド切り替え処理
         function showNextSlide() {
             slides[currentSlideIndex].classList.remove('active');
             currentSlideIndex = (currentSlideIndex + 1) % slides.length;
             slides[currentSlideIndex].classList.add('active');
+
+            // 1周（4スライド＝40秒）回るごとに最新のJSONデータを再取得する
+            if (currentSlideIndex === 0) {
+                loadSignageData();
+            }
         }
 
+        // 初期ロード ＆ ループ処理スタート
+        loadSignageData();
         setInterval(showNextSlide, slideIntervalTime);
     </script>
 </body>
