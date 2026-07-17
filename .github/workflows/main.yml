@@ -1,0 +1,29 @@
+name: Signage Data Auto Update
+
+on:
+  schedule:
+    # 1時間ごとに自動実行する設定
+    - cron: '0 * * * *'
+  workflow_dispatch: # 手動で即時実行したい時用
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+    - name: コードをチェックアウト
+      uses: actions/checkout@v3
+
+    - name: Pythonのセットアップ
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+
+    - name: データを取得してJSONを更新
+      run: python update_data.py
+
+    - name: 更新されたJSONをGitHubに自動保存（コミット）
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+        git add signage_data.json
+        git diff-index --quiet HEAD || (git commit -m "Auto Update Data" && git push)
