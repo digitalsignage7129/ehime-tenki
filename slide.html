@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>【完全自動同期・画像対応】道路・気象・観光サイネージ</title>
+    <title>【画像・画質改善版】自動更新サイネージ</title>
     <style>
         :root {
             --bg-color: #f8fafc;
@@ -121,13 +121,10 @@
             height: 100%;
             overflow: hidden;
             border: 1px solid var(--border-color);
-            display: flex;
-            justify-content: center;
-            align-items: center;
             background-color: #f1f5f9;
         }
 
-        /* 📸 画像をきれいにフィットさせる */
+        /* 📸 高画質な画像をボケさせずに綺麗にフィットさせる設定 */
         .content-right img {
             width: 100%;
             height: 100%;
@@ -197,7 +194,7 @@
                         <div class="sub-description" id="s0-desc">データを取得しています。</div>
                     </div>
                     <div class="content-right">
-                        <img id="s0-img" src="" alt="観光写真" onerror="this.src='https://images.unsplash.com/photo-1542640244-7e672d6cef21?w=800'">
+                        <img id="s0-img" src="" alt="観光写真">
                     </div>
                 </div>
             </div>
@@ -256,9 +253,8 @@
                         </div>
                         <div class="sub-description" id="s2-desc">データを取得しています。</div>
                     </div>
-                    <!-- 天気はイラスト（透過PNGなど）を大きく表示するため特別処理にしてもOK -->
-                    <div class="content-right" style="background-color: #f1f5f9; padding: 20px;">
-                        <img id="s2-img" src="" alt="天気マーク" style="object-fit: contain; width: 70%; height: 70%;">
+                    <div class="content-right">
+                        <img id="s2-img" src="" alt="天気マーク">
                     </div>
                 </div>
             </div>
@@ -308,53 +304,44 @@
     <script>
         const slides = document.querySelectorAll('.slide');
         let currentSlideIndex = 0;
-        const slideIntervalTime = 10000; // 10秒切り替え
+        const slideIntervalTime = 10000;
 
-        // 🔄 JSONからデータを読み込んで画面にセットする関数
         async function loadSignageData() {
             try {
-                // キャッシュ回避のためタイムスタンプを付与してJSONをロード
                 const response = await fetch('signage_data.json?t=' + Date.now());
                 const data = await response.json();
 
-                // 1枚目（観光）
                 document.getElementById('s0-title').textContent = data.slide0.title;
                 document.getElementById('s0-desc').textContent = data.slide0.desc;
                 document.getElementById('s0-img').src = data.slide0.image;
 
-                // 2枚目（道路）
                 document.getElementById('s1-title').textContent = data.slide1.title;
                 document.getElementById('s1-desc').textContent = data.slide1.desc;
                 document.getElementById('s1-img').src = data.slide1.image;
 
-                // 3枚目（天気）
                 document.getElementById('s2-title').textContent = data.slide2.title;
                 document.getElementById('s2-desc').textContent = data.slide2.desc;
                 document.getElementById('s2-img').src = data.slide2.image;
 
-                // 4枚目（警告）
                 document.getElementById('s3-title').textContent = data.slide3.title;
                 document.getElementById('s3-desc').textContent = data.slide3.desc;
                 document.getElementById('s3-img').src = data.slide3.image;
 
             } catch (error) {
-                console.error("データの取得に失敗しました:", error);
+                console.error("データの同期に失敗しました:", error);
             }
         }
 
-        // スライド切り替え処理
         function showNextSlide() {
             slides[currentSlideIndex].classList.remove('active');
             currentSlideIndex = (currentSlideIndex + 1) % slides.length;
             slides[currentSlideIndex].classList.add('active');
 
-            // 1周（4スライド＝40秒）回るごとに最新のJSONデータを再取得する
             if (currentSlideIndex === 0) {
                 loadSignageData();
             }
         }
 
-        // 初期ロード ＆ ループ処理スタート
         loadSignageData();
         setInterval(showNextSlide, slideIntervalTime);
     </script>
