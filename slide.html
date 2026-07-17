@@ -124,11 +124,13 @@
             background-color: #f1f5f9;
         }
 
-        /* 📸 高画質な画像をボケさせずに綺麗にフィットさせる設定 */
+        /* 📸 標識やピクトグラムが歪まず、綺麗に中央に収まるように設定 */
         .content-right img {
             width: 100%;
             height: 100%;
-            object-fit: cover;
+            object-fit: contain; /* coverからcontainに変更することで、標識が切れるのを防ぎます */
+            background-color: #ffffff; /* 標識の背景を白にして見やすくします */
+            padding: 10px;
         }
 
         .accent-box {
