@@ -308,21 +308,26 @@
 
         async function loadSignageData() {
             try {
+                // JSON自体の読み込みキャッシュは回避しつつ、画像URLはそのまま素直に適用する
                 const response = await fetch('signage_data.json?t=' + Date.now());
                 const data = await response.json();
 
+                // 1枚目（観光）
                 document.getElementById('s0-title').textContent = data.slide0.title;
                 document.getElementById('s0-desc').textContent = data.slide0.desc;
                 document.getElementById('s0-img').src = data.slide0.image;
 
+                // 2枚目（道路）
                 document.getElementById('s1-title').textContent = data.slide1.title;
                 document.getElementById('s1-desc').textContent = data.slide1.desc;
                 document.getElementById('s1-img').src = data.slide1.image;
 
+                // 3枚目（天気）
                 document.getElementById('s2-title').textContent = data.slide2.title;
                 document.getElementById('s2-desc').textContent = data.slide2.desc;
                 document.getElementById('s2-img').src = data.slide2.image;
 
+                // 4枚目（警告）
                 document.getElementById('s3-title').textContent = data.slide3.title;
                 document.getElementById('s3-desc').textContent = data.slide3.desc;
                 document.getElementById('s3-img').src = data.slide3.image;
