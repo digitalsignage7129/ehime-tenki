@@ -2,21 +2,21 @@
   "slide0": {
     "title": "しまなみ海道（今治市）",
     "desc": "瀬戸内海に浮かぶ美しい島々を繋ぐ「しまなみ海道」。青い空と海、白い橋のコントラストは世界中からサイクリストが集まる絶景ドライブコースです。",
-    "image": "https://images.unsplash.com/photo-1542640244-7e672d6cef21?w=800"
+    "image": "https://images.unsplash.com/photo-1542640244-7e672d6cef21?w=1000"
   },
   "slide1": {
     "title": "松山自動車道・周辺国道の流れ",
     "desc": "現在、JARTICの道路規制情報を自動取得しています。周辺エリアでの通行止めや、重大な事故・渋滞は発生していません。スムーズに走行可能です。",
-    "image": "https://images.unsplash.com/photo-1518005020951-eccb494ad742?w=800"
+    "image": "https://images.unsplash.com/photo-1518005020951-eccb494ad742?w=1000"
   },
   "slide2": {
     "title": "松山地方の本日の天気（最高気温 34℃）",
     "desc": "現在の予報は「くもり　夜のはじめ頃　晴れ　所により　夜のはじめ頃　まで　雨　で　雷を伴う」です。車内での熱中症や、急な天候変化による路面状況の変化にご注意の上、安全運転をお続けください。",
-    "image": "https://www.jma.go.jp/bosai/forecast/img/201.png"
+    "image": "https://images.unsplash.com/photo-1534088568595-a066f410bcda?w=1000"
   },
   "slide3": {
     "title": "現在、重大な規制情報はありません",
     "desc": "国土交通省の防災情報を24時間リアルタイム監視しています。現時点で愛媛県内および瀬戸内沿岸部における緊急の通行規制は発令されていません。安全第一でお進みください。",
-    "image": "https://images.unsplash.com/photo-1508962914676-134849a727f0?w=800"
+    "image": "https://images.unsplash.com/photo-1508962914676-134849a727f0?w=1000"
   }
 }
