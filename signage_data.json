@@ -5,18 +5,18 @@
     "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/df/Mount_Fuji_from_Lake_Kawaguchi_scaled.jpg/640px-Mount_Fuji_from_Lake_Kawaguchi_scaled.jpg"
   },
   "slide1": {
-    "title": "愛媛県内 主要道路の状況",
-    "desc": "周辺の高速道路および国道は順調に走行可能です。車間距離を十分にとって走行してください。",
+    "title": "松山自動車道・周辺国道の流れ",
+    "desc": "現在、愛媛県内の主要幹線道路において、気象起因の大規模な通行止めや重大な渋滞は報告されておりません。スムーズに走行可能です。",
     "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dc/Japanese_Road_Sign_118-A.svg/600px-Japanese_Road_Sign_118-A.svg.png"
   },
   "slide2": {
-    "title": "愛媛県エリア 天気情報",
-    "desc": "現在、気象庁からの最新データを自動受信中です。",
+    "title": "松山地方の天気（最高気温 36℃）",
+    "desc": "現在の予報は「晴れ　時々　くもり　所により　夕方　まで　雨　で　雷を伴う」です。車内の熱中症に十分ご注意の上、安全運転でお進みください。",
     "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e4/_Sky_blue.JPG/640px-_Sky_blue.JPG"
   },
   "slide3": {
-    "title": "運行規制・通行止め情報",
-    "desc": "現在、重大な交通規制は報告されておりません。最新の情報はラジオ等でもご確認ください。",
+    "title": "現在、重大な規制情報はありません",
+    "desc": "現時点で愛媛県内全域における緊急の通行止め等は発令されていません。安全第一でお進みください。",
     "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Japanese_Safety_Flag.svg/640px-Japanese_Safety_Flag.svg.png"
   }
 }
